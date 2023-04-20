@@ -1,6 +1,9 @@
 # CityGML2OBJ 2.0
 Command line converter of CityGML (.gml) to OBJ (.obj) files, while maintaining the semantics 
 
+![Unbenanntes Diagramm drawio(7)](https://user-images.githubusercontent.com/44395224/233409267-88acb0b3-b8b2-40e5-9b9d-5fa763229956.png)
+
+
 ## Features
 This conversion tool provides several additional optional functionalities:
 
