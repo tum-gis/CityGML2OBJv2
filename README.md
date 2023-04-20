@@ -11,7 +11,7 @@ This conversion tool provides several additional optional functionalities:
 | Object Preservation | For the object option the name of the object will be derived from the `<gml:id>`, if not, an ordered list will be made starting from 1, and each object will be named as an integer from 1 to *n*, where *n* is the number of objects. |
 | Skip the triangulation | OBJ supports polygons, but most software packages prefer triangles. Hence the polygons are triangulated by default (another reason is that OBJ doesn't support polys with holes). However, this may cause problems in some instances, or you might prefer to preserve polygons. Sometimes it also helps to bypass invalid geometries in CityGML data sets. |
 | Conversion of the resulting dataset into a local coordinate system | Normally CityGML data sets are geo-referenced. This may be a problem for some software packages. This option can be used in order to convert the data set to a local system. The origin of the local system correspond to the point with the smallest coordinates (usually the one closest to south-west). this conversion takes place after theprocessing and only affects the vertices in the OBJ file. |
-| Translation of the CityGML dataset into a local coordinate system pefore further processing |Invoke this option in order to translate the CityGML File into a local coordinate system before performing the conversion to OBJ. The translated dataset is saved as a new GML file in the output directory as well. Optionally, the translation parameters can be saved into a designated .txt file. The translation parameters are determined from the envelopes specified in the GML document. Therefore, the translation only takes place in the horizontal directions, a height translation is not applied automatically. It is possible to apply a height translation manually by inserting the height correction in the `CityGML2OBJs` file in line 420 or 424. This functionality is also able to perform the translation of objets that are defined using implicite geometry (e.g vegetation objeczs)|
+| Translation of the CityGML dataset into a local coordinate system pefore further processing |Invoke this option in order to translate the CityGML File into a local coordinate system before performing the conversion to OBJ. The translated dataset is saved as a new GML file in the output directory as well. Optionally, the translation parameters can be saved into a designated .txt file. The translation parameters are determined from the envelopes specified in the GML document. Therefore, the translation only takes place in the horizontal directions, a height translation is not applied automatically. It is possible to apply a height translation manually by inserting the height correction in the `CityGML2OBJs` file in line 420 or 424. This functionality is also able to perform the translation of objets that are defined using implicite geometry (e.g vegetation objects)|
 
 Without any of these options invoked, a simple straightforward conversion from CityGML to OBJ will be performed.
 
@@ -41,7 +41,7 @@ The original project code has been developed on Mac OSX in Python 2.7. It has be
 + Vertices in either `<gml:posList>` or `<gml:pos>`
 + Your files must be valid (see the next section)
 
-*<span style="color:red">The conversion tool does not work for CityGML 3.0 !</span>*
+<span style="color:red">The conversion tool does not work for CityGML 3.0 !</span>*
 
 You can check your CityGML files for validity for example with the [CityDoctor](https://www.citydoctor.eu/de/startseite.html) software.
 
@@ -53,10 +53,17 @@ You can check your CityGML files for validity for example with the [CityDoctor](
 ## How to run?
 In order to run the converter, the following run/debug configurations are required to run the program code:
 <br></br>
-<ul>
-  <li>Specification of the input path:    `-i "your input-path here"` </li>
-  <li>Specification of the output path:   `-o "your output-path here"` </li>
-</ul>
+
+
+
+  
+  `-i  your-input-path-here` 
+  
+  `-o  your-output-path-here` 
+  
+
+  
+
 <br></br>
 Additional configurations have to be made in order to make use of the different optional features:
 <br></br>
@@ -82,6 +89,7 @@ Additional configurations have to be made in order to make use of the different 
 * The tool does not support non-convex polygons in the interior, for which might happen that the centroid of a hole is outside the hole, messing up the triangulation.
 * Skipping triangulation does not work with polygons with holes.
 * Skipping the triangulation will cause incorrect representation of non-convex polygons
+* There can be issues for non convex holes. At the moment, the centroid of the polygon that describes the hole is used as a reference point for the hole. It is however not guaranteed that the centroid is inside of a polygon if it is not convex. Alternatively, a point inside the polygon could be identified with a designated shapely function. While this works in most cases, it is going to lead to issues for some datasets.
 * For some datasets, there will be geometric distortions (image below) These geometric distortions usually disappear when the dataset is translated into a local   coordinate systemwith FME. This problem was the main motivation to extend the existing code by the translation functionality. Unfortunately, this translation does not solve the issue. Apparently, the error mainly appears for CityGML Datasets that are published by the LDBV.
 
 
