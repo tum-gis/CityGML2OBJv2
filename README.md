@@ -71,5 +71,21 @@ Additional configurations have to be made in order to make use of the different 
 | Translation of the CityGML dataset into a local coordinate system pefore further processing, without saving the translation parameters|`-tC 1`|
 | Translation of the CityGML dataset into a local coordinate system pefore further processing, with saving the translation parameters to a designated .txt file|`-tCw 1`|
 
+## Known Limitations
+
+* Some polygon normals sometimes get inverted. Usually a (wrong) normal is preserved from the data set, but in rare instances a bug may cause a correct normal to be inverted (and the other way around--in that case it's a feature!).
+* Non-building thematic classes are not supported in the semantic sense (they will be converted together as `Other` class). However, all geometry will be converted to the plain OBJ regardless of the theme, when the corresponding option is invoked).
+* The texture from the CityGML is not converted to OBJ (future work).
+* The tool supports only single-LOD files. If you load a multi-LOD file, you'll get their union.
+* If the converter crashes, it's probably because your CityGML files contain invalid geometries. Run the code with the `-v 1` flag to validate and skip the invalid geometries. If that doesn't work, try to invoke the option `-p 1`. If that fails too, please report the error.
+* `XLink` is not supported, nor will be because for most files it will result in duplicate geometry. 
+* The tool does not support non-convex polygons in the interior, for which might happen that the centroid of a hole is outside the hole, messing up the triangulation.
+* Skipping triangulation does not work with polygons with holes.
+* Skipping the triangulation will cause incorrect representation of non-convex polygons
+* For some datasets, there will be geometric distortions (image below) These geometric distortions usually disappear when the dataset is translated into a local   coordinate systemwith FME. This problem was the main motivation to extend the existing code by the translation functionality. Unfortunately, this translation does not solve the issue. Apparently, the error mainly appears for CityGML Datasets that are published by the LDBV.
+
+
+
+
 ## Credits
 We are indebted to [Filip Biljecki](https://github.com/fbiljecki), [Hugo Ledoux](https://github.com/hugoledoux) and [Ravi Peters](https://github.com/Ylannl) from [TU Delft](https://github.com/tudelft3d) for their initial version of the CityGML2OBJs converter. The archived version of the repo can still be found here: https://github.com/tudelft3d/CityGML2OBJs
