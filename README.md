@@ -9,10 +9,12 @@ Command line converter of CityGML (.gml) to OBJ (.obj) files, while maintaining 
 
 ## How to run?
 In order to run the converter, the following run/debug configurations are required to run the program code:
-
-Specification of the input path:    `-i "your input-path here"`
-Specification of the output path:   `-o "your output-path here"`
-
+<br></br>
+<ul>
+  <li>Specification of the input path:    `-i "your input-path here"`</li>
+  <li>Specification of the output path:   `-o "your output-path here"`</li>
+</ul>
+<br></br>
 Additional configurations ave to be mde in order to make use of the optional features:
 
 | Optional feature | specification |
