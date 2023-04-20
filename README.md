@@ -8,8 +8,17 @@ Command line converter of CityGML (.gml) to OBJ (.obj) files, while maintaining 
 ...
 
 ## How to run?
-...
-here snippets
+In order to run the converter, the following run/debug configurations are required to run the program code:
+
+Specification of the input path:    `-i "your input-path here"`
+Specification of the output path:   `-o "your output-path here"`
+
+Additional configurations ave to be mde in order to make use of the optional features:
+
+| Optional feature | specification |
+| -------- | -------- |
+| semanitcs option|`-s 1`|
+|
 
 ## Credits
 We are indebted to [Filip Biljecki](https://github.com/fbiljecki), [Hugo Ledoux](https://github.com/hugoledoux) and [Ravi Peters](https://github.com/Ylannl) from [TU Delft](https://github.com/tudelft3d) for their initial version of the CityGML2OBJs converter. The archived version of the repo can still be found here: https://github.com/tudelft3d/CityGML2OBJs
