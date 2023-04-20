@@ -93,9 +93,13 @@ Additional configurations have to be made in order to make use of the different 
 * Skipping triangulation does not work with polygons with holes.
 * Skipping the triangulation will cause incorrect representation of non-convex polygons
 * There can be issues for non convex holes. At the moment, the centroid of the polygon that describes the hole is used as a reference point for the hole. It is however not guaranteed that the centroid is inside of a polygon if it is not convex. Alternatively, a point inside the polygon could be identified with a designated shapely function. While this works in most cases, it is going to lead to issues for some datasets.
-* For some datasets, there will be geometric distortions (image below) These geometric distortions usually disappear when the dataset is translated into a local   coordinate systemwith FME. This problem was the main motivation to extend the existing code by the translation functionality. Unfortunately, this translation does not solve the issue. Apparently, the error mainly appears for CityGML Datasets that are published by the LDBV.
+* For some datasets, there will be geometric distortions (image below) These geometric distortions usually disappear when the dataset is translated into a local   coordinate systemwith FME. This problem was the main motivation to extend the existing code by the translation functionality. Unfortunately, this translation does not solve the issue. Apparently, the error mainly appears for CityGML Datasets that are published by the LDBV. It seems that the number of digits is relevant for the success of the triangulation. usually the LDBV datasets only have 2 to 3 digits. Maybe this leads to a corruption of the triangulation.
 
+<div style="text-align:center">
+  
+![Error_Picture](https://user-images.githubusercontent.com/44395224/233412038-90ce2266-bd80-4656-8f14-20950c282607.JPG)
 
+</div>
 
 
 ## Credits
