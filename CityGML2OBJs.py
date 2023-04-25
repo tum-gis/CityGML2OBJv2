@@ -212,7 +212,7 @@ PARSER.add_argument('-t', '--translate',
 PARSER.add_argument('-p', '--polypreserve',
                     help='Skip the triangulation (preserve polygons). Triangulation is default.', required=False)
 
-# Todo: Changes by Th_Fr: New optional parameter added, see description for details!
+# Changes by Th_Fr: 2 New optional parameters added, see description for details!
 PARSER.add_argument('-tC', '--translateCityGML',
                     help='Perform a Translation of the CityGML Dataset into a local CRS before further processing. No translation is default.',
                     required=False)
@@ -221,7 +221,7 @@ PARSER.add_argument('-tCw', '--translateCityGMLwrite',
                     help='Perform a Translation of the CityGML Dataset into a local CRS before further processing. The translation parameters are stored in a designated .txt file. No Translation is default ',
                     required=False)
 
-# Todo: End of changes by Th_Fr
+# End of changes by Th_Fr
 
 ARGS = vars(PARSER.parse_args())
 DIRECTORY = os.path.join(ARGS['directory'], '')
@@ -281,7 +281,7 @@ elif SKIPTRI == '0':
 else:
     SKIPTRI = False
 
-# Todo: Changes By Th_Fr:
+# Changes By Th_Fr:
 
 TRANSLATECGML = ARGS['translateCityGML']
 if TRANSLATECGML == '1':
@@ -299,7 +299,7 @@ elif TRANSLATECGMLW == '0':
 else:
     TRANSLATECGMLW = False
 
-# Todo: End of Changes by Th_Fr
+# End of Changes by Th_Fr
 
 
 # -----------------------------------------------------------------
@@ -415,7 +415,7 @@ for f in files_found:
 
     }
 
-    # Todo: Changes by Th_FR
+    # Changes by Th_FR
 
     if TRANSLATECGML:
         cgt.translateToLocalCRS(CITYGML, FILENAME, root, ns_bldg, ns_gml, ns_citygml, ns_frn, ns_veg, RESULT,
@@ -426,7 +426,7 @@ for f in files_found:
                                 write2file=True, applyHeight=Decimal("0"))
 
 
-    # Todo: End of changes by Th_FR
+    # End of changes by Th_FR
 
 
 

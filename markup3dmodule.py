@@ -78,7 +78,6 @@ def GMLpoints(ring):
         assert (len(coords) % 3 == 0)
         # -- Store the coordinate tuple
         for i in range(0, len(coords), 3):
-            # Todo: Einal den Datentyp in np.double ändern
             listPoints.append([float(coords[i]), float(coords[i + 1]), float(coords[i + 2])])
     elif len(ring.findall('.//{%s}pos' % ns_gml)) > 0:
         points = ring.findall('.//{%s}pos' % ns_gml)
@@ -88,7 +87,6 @@ def GMLpoints(ring):
             assert (len(coords) % 3 == 0)
             # -- Store the coordinate tuple
             for i in range(0, len(coords), 3):
-                # Todo: Einmal den Datentyp in np.double ändern
                 listPoints.append([float(coords[i]), float(coords[i + 1]), float(coords[i + 2])])
     else:
         return None

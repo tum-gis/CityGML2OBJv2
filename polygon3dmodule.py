@@ -35,12 +35,6 @@ import copy
 import triangle
 import numpy as np
 import shapely
-# Todo: Changed by Th_Fr
-from shapely import geometry
-from shapely.ops import triangulate
-from shapely.geometry import Polygon
-from scipy.spatial import Delaunay
-# Todo: End of changes by Th_Fr
 
 
 def getAreaOfGML(poly, height=True):
@@ -345,10 +339,10 @@ def centroid(list_of_points):
 # The returned point lies on the contour of the polygon sometimes, wich then messes up the triangulation
 def point_inside(list_of_points):
     """Returns a point that is guaranteed to be inside the polygon, thanks to Shapely."""
-    # Todo: Changed by Th_Fr: new function that actually works
+    #  Th_Fr: new function that actually works
     representative_point_tmp = centroid(list_of_points)
     representative_point = shapely.geometry.Point(representative_point_tmp)
-    # Todo: End of the changes by Th_Fr
+    #  End of the changes by Th_Fr
     return representative_point.coords
 
 
@@ -400,12 +394,12 @@ def reverse_vertices(vertices):
         reversed_vertices.append(vertices[i])
     return reversed_vertices
 
-# Todo: Added by Th_FR, inspirde by https://pythonseminar.de/prufen-ob-die-liste-doppelte-elemente-enthalt-in-python/
+# Added by Th_FR, inspirde by https://pythonseminar.de/prufen-ob-die-liste-doppelte-elemente-enthalt-in-python/
 def has_duplicates(seq):
     seen = []
     unique_list = [x for x in seq if x not in seen and not seen.append(x)]
     return len(seq) != len(unique_list)
-# Todo: End of changes
+#  End of changes
 
 def triangulation(e, i):
     """Triangulate the polygon with the exterior and interior list of points. Works only for convex polygons.
@@ -512,7 +506,7 @@ def triangulation(e, i):
     pl = plane(a, b, c)
 
     # -- Prepare the polygon to be triangulated
-    # Todo: Change by Th_Fr: Distinguishing different cases!
+    # Change by Th_Fr: Distinguishing different cases!
     # There are two cases distinguished here: 1. A Polygon without holes, 2. A polygon with holes
     if newholes == None:
         poly = {'vertices': np.array(newpolypoints), 'segments': np.array(segments)}
@@ -525,7 +519,7 @@ def triangulation(e, i):
     else:
         poly = {'vertices': np.array(newpolypoints), 'segments': np.array(segments), 'holes': np.array(newholes)}
         t = triangle.triangulate(poly, 'pQjz')
-    # Todo: End of changes by Th_Fr
+    # End of changes by Th_Fr
 
     # -- Get the triangles and their vertices
     tris = t['triangles']

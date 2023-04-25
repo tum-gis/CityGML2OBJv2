@@ -36,7 +36,6 @@ import numpy as np
 getcontext().prec = 28
 
 
-# Todo: This function works, but it does not deliver the desired results.
 def performStableAddition(number1, number2):
     # Input: string number1, string number 2, output: string sum
     # Determine the number of positions after the comma.
@@ -95,11 +94,9 @@ def performStableAddition(number1, number2):
         if length_of_number >= lengths[max_index]:
             if n_after_comma_number1 != 0:
                 number_sum_string = number_sum_string[:-(lengths[0])] + "." + number_sum_string[-(lengths[0]):]
-                print("Number sum string 1: ", number_sum_string)
                 return number_sum_string
             else:
                 number_sum_string = number_sum_string
-                print("Number sum string 3: ", number_sum_string)
                 return number_sum_string
         elif length_of_number < n_after_comma_number1:
             new_string = ""
@@ -109,11 +106,9 @@ def performStableAddition(number1, number2):
                 else:
                     new_string += number_sum_string[i]
             number_sum_string = new_string
-            print("Number sum string 4: ", number_sum_string)
             return number_sum_string
         else:
             number_sum_string = number_sum_string
-            print("Number sum string 5: ", number_sum_string)
             return number_sum_string
 
     # Case 2: number two has more positions after the comma than number one
@@ -138,17 +133,15 @@ def performStableAddition(number1, number2):
 
         # Insert the comma at the correct position
         length_of_number = len(number_sum_string.replace("-",
-                                                         ""))  # Todo: diese funcktion muss auch noch bei der anderen Falluntrscheidun einf´gefügt werden!
+                                                         ""))
         if length_of_number > n_after_comma_number2:
             if n_after_comma_number2 != 0:
 
                 number_sum_string = number_sum_string[:-(lengths[1])] + "." + number_sum_string[-(lengths[1]):]
-                print("Number sum string 6: ", number_sum_string)
                 return number_sum_string
 
             else:
                 number_sum_string = number_sum_string
-                print("Number sum string 8: ", number_sum_string)
                 return number_sum_string
 
         elif length_of_number < n_after_comma_number2:
@@ -159,11 +152,9 @@ def performStableAddition(number1, number2):
                 else:
                     new_string += number_sum_string[i]
             number_sum_string = new_string
-            print("Number sum string 9: ", number_sum_string)
             return number_sum_string
         else:
             number_sum_string = number_sum_string
-            print("Number sum string 10: ", number_sum_string)
             return number_sum_string
 
 
@@ -214,7 +205,7 @@ def getTranslationParameters(envelopes, ns_gml):
 def splitAndApplyTrafo(coordString, transParam):
     # Splitting the coordinate string by empty spaces
     split = coordString.split(" ")
-    # Apply the Trafo # Todo: Check for redundant code!
+    # Apply the Trafo
     counter = 0
     length = int(len(split))
     length_new = int(length / 3)
@@ -223,12 +214,12 @@ def splitAndApplyTrafo(coordString, transParam):
         # split[counter + 1] = (Decimal(split[counter + 1])) + transParam[0]
         # split[counter + 2] = (Decimal(split[counter + 2])) - transParam[2]
         #
-        # Todo: Dies ist nur ein test der neuen eventuell besser funtionierenden addition
-        print("y")
+
+        # print("y")
         split[counter] = performStableAddition(split[counter], str(transParam[1]))
-        print("x")
+        # print("x")
         split[counter + 1] = performStableAddition(split[counter + 1], str(transParam[0]))
-        print("z")
+        # print("z")
         split[counter + 2] = performStableAddition(split[counter + 2], str(transParam[2]))
 
         counter += 3
