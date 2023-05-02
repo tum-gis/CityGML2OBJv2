@@ -66,5 +66,9 @@ Additional configurations have to be made in order to make use of the different 
 
 More detailed information on the optional features can be found in this [Wiki Page](https://github.com/tum-gis/citygml2obj-2.0/wiki/Optional-Functionalities)
 
+## Limitations
+
+Information on the limitations can be found in this [Wiki Page](https://github.com/tum-gis/citygml2obj-2.0/wiki/Limitations) 
+
 ## Credits
 We are indebted to [Filip Biljecki](https://github.com/fbiljecki), [Hugo Ledoux](https://github.com/hugoledoux) and [Ravi Peters](https://github.com/Ylannl) from [TU Delft](https://github.com/tudelft3d) for their initial version of the CityGML2OBJs converter. The archived version of the repo can still be found here: https://github.com/tudelft3d/CityGML2OBJs
