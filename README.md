@@ -40,9 +40,8 @@ You can check your CityGML files for validity for example with the [CityDoctor](
 + `<gml:id>` for each `<gml:Polygon>`
 
 ## How to run?
-In order to run the converter, the following run/debug configurations are required to run the program code:
+In order to run the converter, the following run/debug configurations are required:
 <br></br>
-
 
 
   
