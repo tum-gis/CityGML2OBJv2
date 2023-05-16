@@ -62,7 +62,7 @@ Additional configurations have to be made in order to make use of the different 
 | Object Preservation | `-g 1`| keep the names of the objects |
 | Skip the triangulation | `-p 1`| preserve polygons in the OBJ file |
 | Conversion of the resulting dataset into a local coordinate system | `-t 1`| convert the resulting dataset to a local system |
-| Translation of the CityGML dataset into a local coordinate system pefore further processing, without saving the translation parameters|`-tC 1` `-tCw 1`| translate the CityGML dataset into a local CRS before processing | 
+| Translation of the CityGML dataset into a local coordinate system pefore further processing, without / with saving the translation parameters|`-tC 1` `-tCw 1`| translate the CityGML dataset into a local CRS before processing | 
 
 More detailed information on the optional features can be found in this [Wiki Page](https://github.com/tum-gis/citygml2obj-2.0/wiki/Optional-Functionalities)
 
