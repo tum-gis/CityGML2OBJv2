@@ -1,7 +1,7 @@
 # :cityscape: CityGML2OBJ 2.0 :cityscape:
 Command line converter of **CityGML (.gml)** to **OBJ (.obj)** files, while maintaining the semantics 
 
-![Unbenanntes Diagramm drawio(7)](https://user-images.githubusercontent.com/44395224/233409267-88acb0b3-b8b2-40e5-9b9d-5fa763229956.png)
+![Before-After](https://user-images.githubusercontent.com/44395224/235768949-747bd3c7-e347-45ab-9ae0-713065da90f3.png)
 
 ## :arrow_forward: How to run?
 Open your command line and type in:
@@ -25,20 +25,8 @@ and Bob's your uncle! :construction_worker:
 | Translation of the CityGML dataset into a local coordinate system before further processing, with saving the translation parameters to a designated .txt file|`-tCw 1`|
 
 
-## Features
-This conversion tool provides several additional optional functionalities:
-
-| Optional feature | Explanation |
-| -------- | -------- |
-| Semanitcs Option| This option will create an individual OBJ file for each of the boundary surfaces. (e.g. `RoofSurface`, `WallSurface` and `GroundSurface`) |
-| Geometry Validation | This option can be used in order to validate the geometries and skip invalid ones. Invalid geometries will be reported with their respective `<gml:id>`.|
-| Object Preservation | For the object option the name of the object will be derived from the `<gml:id>`, if not, an ordered list will be made starting from 1, and each object will be named as an integer from 1 to *n*, where *n* is the number of objects. |
-| Skip the triangulation | OBJ supports polygons, but most software packages prefer triangles. Hence the polygons are triangulated by default (another reason is that OBJ doesn't support polys with holes). However, this may cause problems in some instances, or you might prefer to preserve polygons. Sometimes it also helps to bypass invalid geometries in CityGML data sets. |
-| Conversion of the resulting dataset into a local coordinate system | Normally CityGML data sets are geo-referenced. This may be a problem for some software packages. This option can be used in order to convert the data set to a local system. The origin of the local system correspond to the point with the smallest coordinates (usually the one closest to south-west). this conversion takes place after theprocessing and only affects the vertices in the OBJ file. |
-| Translation of the CityGML dataset into a local coordinate system pefore further processing |Invoke this option in order to translate the CityGML File into a local coordinate system before performing the conversion to OBJ. The translated dataset is saved as a new GML file in the output directory as well. Optionally, the translation parameters can be saved into a designated .txt file called `NameOfTheCityGMLDataset_Translation_Parameters.txt`. The translation parameters are determined from the envelopes specified in the GML document. Therefore, the translation only takes place in the horizontal directions, a height translation is not applied automatically. It is possible to apply a height translation manually by inserting the height correction in the `CityGML2OBJs` file in line 420 or 424. This functionality is also able to perform the translation of objets that are defined using implicite geometry (e.g vegetation objects)|
-
-
 ## :page_with_curl: Requirements
+
 ### Python packages:
 
 + [Numpy](http://docs.scipy.org/doc/numpy/user/install.html) 
@@ -69,27 +57,34 @@ Using Python 3.10 and Windows 10 OS
 + `<gml:id>` for each `<bldg:Building>` and other types of city objects
 + `<gml:id>` for each `<gml:Polygon>`
 
+## How to run?
+In order to run the converter, the following run/debug configurations are required:
+<br></br>
 
-## Known Limitations
 
-* Some polygon normals sometimes get inverted. Usually a (wrong) normal is preserved from the data set, but in rare instances a bug may cause a correct normal to be inverted (and the other way around--in that case it's a feature!).
-* Non-building thematic classes are not supported in the semantic sense (they will be converted together as `Other` class). However, all geometry will be converted to the plain OBJ regardless of the theme, when the corresponding option is invoked).
-* The texture from the CityGML is not converted to OBJ (future work).
-* The tool supports only single-LOD files. If you load a multi-LOD file, you'll get their union.
-* If the converter crashes, it's probably because your CityGML files contain invalid geometries. Run the code with the `-v 1` flag to validate and skip the invalid geometries. If that doesn't work, try to invoke the option `-p 1`. If that fails too, please report the error.
-* `XLink` is not supported, nor will be because for most files it will result in duplicate geometry. 
-* The tool does not support non-convex polygons in the interior, for which might happen that the centroid of a hole is outside the hole, messing up the triangulation.
-* Skipping triangulation does not work with polygons with holes.
-* Skipping the triangulation will cause incorrect representation of non-convex polygons
-* There can be issues for non convex holes. At the moment, the centroid of the polygon that describes the hole is used as a reference point for the hole. It is however not guaranteed that the centroid is inside of a polygon if it is not convex. Alternatively, a point inside the polygon could be identified with a designated shapely function. While this works in most cases, it is going to lead to issues for some datasets.
-* For some datasets, there will be geometric distortions (image below) These geometric distortions usually disappear when the dataset is translated into a local   coordinate systemwith FME. This problem was the main motivation to extend the existing code by the translation functionality. Unfortunately, this translation does not solve the issue. Apparently, the error mainly appears for CityGML Datasets that are published by the LDBV. It seems that the number of digits is relevant for the success of the triangulation. usually the LDBV datasets only have 2 to 3 digits. Maybe this leads to a corruption of the triangulation.
-
-<div style="text-align:center">
+  `-i  your-input-path-here` 
   
-![Error_Picture](https://user-images.githubusercontent.com/44395224/233412038-90ce2266-bd80-4656-8f14-20950c282607.JPG)
+  `-o  your-output-path-here` 
+  
 
-</div>
+Additional configurations have to be made in order to make use of the different optional features:
+<br></br>
 
+| Optional feature | specification | short explanation |
+| -------- | -------- | -------- |
+| Semanitcs Option|`-s 1`| create an individual OBJ file for each of the boundary surfaces |
+| Geometry Validation | `-v 1`| validate the geometries and skip invalid ones |
+| Object Preservation | `-g 1`| keep the names of the objects |
+| Skip the triangulation | `-p 1`| preserve polygons in the OBJ file |
+| Conversion of the resulting dataset into a local coordinate system | `-t 1`| convert the resulting dataset to a local system |
+| Translation of the CityGML dataset into a local coordinate system pefore further processing, without / with saving the translation parameters|`-tC 1` `-tCw 1`| translate the CityGML dataset into a local CRS before processing | 
+
+More detailed information on the optional features can be found in this [Wiki Page](https://github.com/tum-gis/citygml2obj-2.0/wiki/Optional-Functionalities)
+
+
+## Limitations
+
+Information on the limitations can be found in this [Wiki Page](https://github.com/tum-gis/citygml2obj-2.0/wiki/Limitations) 
 
 ## :handshake: Credits
 We are indebted to [Filip Biljecki](https://github.com/fbiljecki), [Hugo Ledoux](https://github.com/hugoledoux) and [Ravi Peters](https://github.com/Ylannl) from [TU Delft](https://github.com/tudelft3d) for their initial version of the CityGML2OBJs converter. The archived version of the repo can still be found here: https://github.com/tudelft3d/CityGML2OBJs; the paper: 
