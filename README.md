@@ -57,31 +57,7 @@ Using Python 3.10 and Windows 10 OS
 + `<gml:id>` for each `<bldg:Building>` and other types of city objects
 + `<gml:id>` for each `<gml:Polygon>`
 
-## How to run?
-In order to run the converter, the following run/debug configurations are required:
-<br></br>
-
-
-  `-i  your-input-path-here` 
-  
-  `-o  your-output-path-here` 
-  
-
-Additional configurations have to be made in order to make use of the different optional features:
-<br></br>
-
-| Optional feature | specification | short explanation |
-| -------- | -------- | -------- |
-| Semanitcs Option|`-s 1`| create an individual OBJ file for each of the boundary surfaces |
-| Geometry Validation | `-v 1`| validate the geometries and skip invalid ones |
-| Object Preservation | `-g 1`| keep the names of the objects |
-| Skip the triangulation | `-p 1`| preserve polygons in the OBJ file |
-| Conversion of the resulting dataset into a local coordinate system | `-t 1`| convert the resulting dataset to a local system |
-| Translation of the CityGML dataset into a local coordinate system pefore further processing, without / with saving the translation parameters|`-tC 1` `-tCw 1`| translate the CityGML dataset into a local CRS before processing | 
-
-More detailed information on the optional features can be found in this [Wiki Page](https://github.com/tum-gis/citygml2obj-2.0/wiki/Optional-Functionalities)
-
-
+ 
 ## Limitations
 
 Information on the limitations can be found in this [Wiki Page](https://github.com/tum-gis/citygml2obj-2.0/wiki/Limitations) 
