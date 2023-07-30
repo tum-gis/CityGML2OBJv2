@@ -1,7 +1,7 @@
 # :cityscape: CityGML2OBJ 2.0 :cityscape:
 Command line converter of **CityGML (.gml)** to **OBJ (.obj)** files, while maintaining the semantics 
 
-![Before-After](https://user-images.githubusercontent.com/44395224/235768949-747bd3c7-e347-45ab-9ae0-713065da90f3.png)
+![](https://github.com/tum-gis/CityGML2OBJv2/blob/main/citygmltoobj2small.gif)
 
 ## :arrow_forward: How to run?
 Open your command line and type in:
