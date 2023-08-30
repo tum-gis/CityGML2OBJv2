@@ -1,7 +1,7 @@
-lxml            4.9.2
-matplotlib      3.7.1
-numpy           1.24.3
-PyDecimal       1.0
-pydeps          1.12.8
-shapely         2.0.1
-triangle        20220202
+lxml==4.9.2
+matplotlib==3.7.1
+numpy==1.24.3
+PyDecimal==1.0
+pydeps==1.12.8
+shapely==2.0.1
+triangle==20220202
