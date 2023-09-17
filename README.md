@@ -4,11 +4,13 @@ Command line converter of **CityGML (.gml)** to **OBJ (.obj)** files, while main
 ![](https://github.com/tum-gis/CityGML2OBJv2/blob/main/citygmltoobj2small.gif)
 
 ## :arrow_forward: How to run?
-Open your command line and type in:
-  
+The `CityGML2OBJs.py` represents the starting point of the code, choose this file when configuring the runtime and pass the following parameters:
+
   `-i  your-input-citygml-path-here` 
   
   `-o  your-output-obj-path-here` 
+
+Please make sure to use the absolute paths to the respective directories.
 
 and Bob's your uncle! :construction_worker:
 
