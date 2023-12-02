@@ -345,7 +345,8 @@ print("CityGML2OBJ. Searching for CityGML files...")
 # -- Find all CityGML files in the directory
 os.chdir(DIRECTORY)
 # -- Supported extensions
-types = ('*.gml', '*.GML', '*.xml', '*.XML')
+# Old version: types = ('*.gml', '*.GML', '*.xml', '*.XML')
+types = ('*.gml', '*.xml')
 files_found = []
 for files in types:
     files_found.extend(glob.glob(files))
