@@ -69,7 +69,7 @@ We are indebted to [Filip Biljecki](https://github.com/fbiljecki), [Hugo Ledoux]
 
 Biljecki, F., & Arroyo Ohori, K. (2015). Automatic semantic-preserving conversion between OBJ and CityGML. Eurographics Workshop on Urban Data Modelling and Visualisation 2015, pp. 25-30.
 
-[[PDF]](http://filipbiljecki.com/publications/Biljecki2015vk.pdf) [[DOI]](http://doi.org/10.2312/udmv.20151345)
+[[PDF]](https://filipbiljecki.com/publications/2015_udmv_citygml_obj.pdf) [[DOI]](http://doi.org/10.2312/udmv.20151345)
 
 ## :mailbox: Contact & Feedback
 
