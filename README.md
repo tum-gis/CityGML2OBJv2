@@ -52,7 +52,7 @@ Using Python 3.10 and Windows 10 OS
 + CityGML 1.0 or 2.0
 + Files must end with `.gml`, `.GML`, `.xml`, or `.XML`
 + Vertices in either `<gml:posList>` or `<gml:pos>`
-+ Your files must be valid (e.g., free check with [CityDoctor](https://www.citydoctor.eu/de/startseite.html))
++ Your files must be valid (e.g., free check with [CityDoctor](https://transfer.hft-stuttgart.de/gitlab/citydoctor/citydoctor2)
 
 #### Optional, but recommended:
 
