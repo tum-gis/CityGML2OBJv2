@@ -108,7 +108,7 @@ def poly_to_obj(poly, cl, material=None):
     last_ep = epoints[-1]
     epoints_clean = list(remove_reccuring(epoints))
     epoints_clean.append(last_ep)
-    # print("epoints: ", epoints)
+    #print("epoints: ", epoints)
     # print("epoints_clean: ", epoints_clean)
 
     # -- LinearRing(s) forming the interior
@@ -172,7 +172,6 @@ def poly_to_obj(poly, cl, material=None):
             if SKIPTRI:
                 t = [epoints_clean[:-1]]
             else:
-
                 t = polygon3dmodule.triangulation(epoints_clean, irings)
 
         except:

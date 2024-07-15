@@ -35,6 +35,7 @@ import copy
 import triangle
 import numpy as np
 import shapely
+from sklearn.decomposition import PCA
 
 
 def getAreaOfGML(poly, height=True):
@@ -122,7 +123,7 @@ def isPolyPlanar(polypoints):
     return planar
 
 
-def isPolySimple(polypoints):
+def isPolySimple(polypoints): #todo: this function has to be adapted
     """Checks if the polygon is simple, i.e. it does not have any self-intersections.
     Inspired by http://www.win.tue.nl/~vanwijk/2IV60/2IV60_exercise_3_answers.pdf"""
     npolypoints = len(polypoints)
@@ -131,10 +132,21 @@ def isPolySimple(polypoints):
     temppolypoints = copy.deepcopy(polypoints)
     newpolypoints = copy.deepcopy(temppolypoints)
     # -- If the polygon is vertical
-    if math.fabs(unit_normal(temppolypoints[0], temppolypoints[1], temppolypoints[2])[2]) < 10e-6:
+    #if math.fabs(unit_normal(temppolypoints[0], temppolypoints[1], temppolypoints[2])[2]) < 10e-6:
+    #    vertical = True
+
+    #else:
+    #    vertical = False
+
+    normal = calculate_polygon_normal(temppolypoints)
+    if math.fabs(normal[2]) < 10e-6:
         vertical = True
+        print("The polygon is vertical 2")
+        print("math.fabs(normal[2]): ", math.fabs(normal[2]))
     else:
         vertical = False
+        print("Not vertical 2")
+
     # -- We want to project the vertical polygon to the XZ plane
     # -- If a polygon is parallel with the YZ plane that will not be possible
     YZ = True
@@ -257,7 +269,7 @@ def get2DArea(polypoints):
     return get3DArea(flatpolypoints)
 
 
-def getNormal(polypoints):
+def getNormal(polypoints): #todo: REplace with an improved functionality
     """Get the normal of the first three points of a polygon. Assumes planarity."""
     return unit_normal(polypoints[0], polypoints[1], polypoints[2])
 
@@ -354,6 +366,38 @@ def plane(a, b, c):
     p_d = -1 * (p_a * a[0] + p_b * a[1] + p_c * a[2])
     return p_a, p_b, p_c, p_d
 
+# added by Th_Fr
+def planeAdjusted(points):
+    """
+    Returns the equation of a plane in three dimensions using PCA.
+
+    Parameters:
+    points: list of lists or numpy array of shape (n, 3)
+        List of points in 3D space [x, y, z] through which the plane should pass.
+        At least 3 points are required to define a plane uniquely.
+
+    Returns:
+    p_a, p_b, p_c, p_d: float
+        Parameters of the plane equation ax + by + cz + d = 0.
+    """
+    # Convert points to numpy array for easier manipulation
+    points = np.array(points)
+
+    # Check if at least 3 points are provided
+    if points.shape[0] < 3:
+        raise ValueError("At least 3 points are required to define a plane.")
+
+    # Use PCA to fit the plane
+    pca = PCA(n_components=3)
+    pca.fit(points)
+    normal = pca.components_[2]  # The normal vector to the plane
+
+    # Extract coefficients
+    p_a, p_b, p_c = normal
+    p_d = -np.dot(normal, pca.mean_)  # Calculate d using the mean of points
+
+    return p_a, p_b, p_c, p_d
+
 
 def get_height(plane, x, y):
     """Get the missing coordinate from the plane equation and the partial coordinates."""
@@ -365,7 +409,7 @@ def get_height(plane, x, y):
 def get_y(plane, x, z):
     """Get the missing coordinate from the plane equation and the partial coordinates."""
     p_a, p_b, p_c, p_d = plane
-    y = (-p_a * x - p_c * z - p_d) / p_b
+    y = (-p_a * x - p_c * z - p_d) / (p_b)
     return y
 
 
@@ -400,6 +444,60 @@ def has_duplicates(seq):
     unique_list = [x for x in seq if x not in seen and not seen.append(x)]
     return len(seq) != len(unique_list)
 #  End of changes
+
+# Added by Th_Fr
+def weighted_centroid(vertices):
+    """
+    Calculate the weighted centroid of a polygon defined by vertices.
+
+    Arguments:
+    vertices (numpy array): Array of vertices of the polygon.
+
+    Returns:
+    numpy array: Weighted centroid [x, y, z].
+    """
+    total_area = 0.0
+    centroid = np.zeros(3)
+    num_vertices = len(vertices)
+
+    for i in range(num_vertices):
+        j = (i + 1) % num_vertices
+        cross = np.cross(vertices[i], vertices[j])
+        area = np.linalg.norm(cross)
+        centroid += (vertices[i] + vertices[j]) * area
+        total_area += area
+
+    return centroid / (3 * total_area)
+def calculate_polygon_normal(poly):
+    """
+       Calculate the normal vector of a polygon using a weighted centroid and cross product approach.
+
+       Arguments:
+       poly (list of lists): List of vertices of the polygon, where each vertex is [x, y, z].
+
+       Returns:
+       numpy array: Normal vector (nx, ny, nz) of the polygon's plane.
+       """
+    vertices = np.array(poly)
+    num_vertices = len(vertices)
+
+    # Calculate weighted centroid
+    centroid = weighted_centroid(vertices)
+
+    # Compute the normal vector using cross product of edges
+    normal = np.zeros(3)
+    for i in range(num_vertices):
+        j = (i + 1) % num_vertices
+        vi = vertices[i]
+        vj = vertices[j]
+        normal[0] += (vi[1] - centroid[1]) * (vj[2] - centroid[2]) - (vi[2] - centroid[2]) * (vj[1] - centroid[1])
+        normal[1] += (vi[2] - centroid[2]) * (vj[0] - centroid[0]) - (vi[0] - centroid[0]) * (vj[2] - centroid[2])
+        normal[2] += (vi[0] - centroid[0]) * (vj[1] - centroid[1]) - (vi[1] - centroid[1]) * (vj[0] - centroid[0])
+
+    # Normalize the normal vector
+    normal /= np.linalg.norm(normal)
+
+    return normal
 
 def triangulation(e, i):
     """Triangulate the polygon with the exterior and interior list of points. Works only for convex polygons.
@@ -450,12 +548,15 @@ def triangulation(e, i):
     # -- Compute the normal of the polygon for detecting vertical polygons and
     # -- for the correct orientation of the new triangulated faces
     # -- If the polygon is vertical
-    normal = unit_normal(temppolypoints[0], temppolypoints[1], temppolypoints[2])
+    #normal = unit_normal(temppolypoints[0], temppolypoints[1], temppolypoints[2])
+    normal = calculate_polygon_normal(temppolypoints)
     if math.fabs(normal[2]) < 10e-2:
         vertical = True
-        # print("math.fabs(normal[2]): ", math.fabs(normal[2]))
+        #print("The polygon is vertical")
+        #print("math.fabs(normal[2]): ", math.fabs(normal[2]))
     else:
         vertical = False
+        #print("Not vertical")
     # -- We want to project the vertical polygon to the XZ plane
     # -- If a polygon is parallel with the YZ plane that will not be possible
 
@@ -498,12 +599,12 @@ def triangulation(e, i):
             counter = counter + 1
             h = h.pop(-1)
 
-    # -- Plane information (assumes planarity)
+    # -- Plane information (assumes planarity) #todo: hier muss noch etwas angepasst werden
     a = e[0]
     b = e[1]
     c = e[2]
     # -- Construct the plane
-    pl = plane(a, b, c)
+    pl = planeAdjusted(e)
 
     # -- Prepare the polygon to be triangulated
     # Change by Th_Fr: Distinguishing different cases!

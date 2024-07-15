@@ -62,7 +62,11 @@ def polydecomposer(polygon):
 def polygonFinder(GMLelement):
     """Find the <gml:polygon> element."""
     polygonsLocal = GMLelement.findall('.//{%s}Polygon' % ns_gml)
+    #print(polygonsLocal)
 
+    #for polygon in polygonsLocal:
+    #    gml_id = polygon.get('{%s}id' % ns_gml)
+    #    print(gml_id)
     return polygonsLocal
 
 
