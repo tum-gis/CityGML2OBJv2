@@ -467,7 +467,9 @@ def weighted_centroid(vertices):
         centroid += (vertices[i] + vertices[j]) * area
         total_area += area
 
+
     return centroid / (3 * total_area)
+
 def calculate_polygon_normal(poly):
     """
        Calculate the normal vector of a polygon using a weighted centroid and cross product approach.
@@ -482,7 +484,7 @@ def calculate_polygon_normal(poly):
     num_vertices = len(vertices)
 
     # Calculate weighted centroid
-    centroid = weighted_centroid(vertices)
+    centroid = centroid(vertices)
 
     # Compute the normal vector using cross product of edges
     normal = np.zeros(3)
@@ -494,8 +496,11 @@ def calculate_polygon_normal(poly):
         normal[1] += (vi[2] - centroid[2]) * (vj[0] - centroid[0]) - (vi[0] - centroid[0]) * (vj[2] - centroid[2])
         normal[2] += (vi[0] - centroid[0]) * (vj[1] - centroid[1]) - (vi[1] - centroid[1]) * (vj[0] - centroid[0])
 
-    # Normalize the normal vector
-    normal /= np.linalg.norm(normal)
+    norm = np.linalg.norm(normal)
+    if norm != 0:
+        normal /= norm
+    else:
+        normal = np.array([0.0, 0.0, 0.0])
 
     return normal
 
