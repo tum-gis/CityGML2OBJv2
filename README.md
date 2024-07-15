@@ -45,7 +45,7 @@ and Bob's your uncle! :construction_worker:
 ### Tested:
 
 + Using Python 3.10 and Windows 10 OS
-+ Using Python 3.20 and Ubuntu 22.04.4 LTS (Jammy Jellyfish)
++ Using Python 3.10 and Ubuntu 22.04.4 LTS (Jammy Jellyfish)
 
 ### CityGML Requirements:
 
