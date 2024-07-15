@@ -36,6 +36,7 @@ and Bob's your uncle! :construction_worker:
 + [lxml](http://lxml.de)
 + [Shapely](https://github.com/Toblerity/Shapely)
 + [Decimal](https://docs.python.org/3/library/decimal.html)
++ [Scikit-learn](https://scikit-learn.org/stable/)
   
 #### Optional:
 
