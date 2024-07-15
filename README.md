@@ -36,6 +36,7 @@ and Bob's your uncle! :construction_worker:
 + [lxml](http://lxml.de)
 + [Shapely](https://github.com/Toblerity/Shapely)
 + [Decimal](https://docs.python.org/3/library/decimal.html)
++ [Scikit-learn](https://scikit-learn.org/stable/)
   
 #### Optional:
 
@@ -43,7 +44,8 @@ and Bob's your uncle! :construction_worker:
 
 ### Tested:
 
-Using Python 3.10 and Windows 10 OS
++ Using Python 3.10 and Windows 10 OS
++ Using Python 3.10 and Ubuntu 22.04.4 LTS (Jammy Jellyfish)
 
 ### CityGML Requirements:
 
