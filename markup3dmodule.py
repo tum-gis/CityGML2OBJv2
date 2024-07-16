@@ -1,6 +1,6 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
-
+import config
 # The MIT License (MIT)
 
 # This code is part of the CityGML2OBJs package
@@ -28,18 +28,40 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 # THE SOFTWARE.
 
-from lxml import etree
-import numpy as np
+from config import setVersion
 
-# -- Name spaces
+#if config.VERSION == 2:
+    # -- Name spaces for CityGML 2.0
 ns_citygml = "http://www.opengis.net/citygml/2.0"
-
 ns_gml = "http://www.opengis.net/gml"
 ns_bldg = "http://www.opengis.net/citygml/building/2.0"
 ns_xsi = "http://www.w3.org/2001/XMLSchema-instance"
 ns_xAL = "urn:oasis:names:tc:ciq:xsdschema:xAL:2.0"
 ns_xlink = "http://www.w3.org/1999/xlink"
 ns_dem = "http://www.opengis.net/citygml/relief/2.0"
+#
+#    # -- Name spaces for CityGML 3.0
+#    ns_citygml = "http://www.opengis.net/citygml/3.0"
+#    ns_con = "http://www.opengis.net/citygml/construction/3.0"
+#    ns_xlink = "http://www.w3.org/1999/xlink"
+#    ns_gml = "http://www.opengis.net/gml/3.2"
+#    ns_bldg = "http://www.opengis.net/citygml/building/3.0"
+#    ns_app = "http://www.opengis.net/citygml/appearance/3.0"
+#    ns_pcl = "http://www.opengis.net/citygml/pointcloud/3.0"
+#    ns_gen = "http://www.opengis.net/citygml/generics/3.0"
+#    ns_gss = "http://www.isotc211.org/2005/gss"
+#    na_pfx0 = "urn:oasis:names:tc:ciq:xsdschema:xAL:2.0"
+#    ns_gsr = "http://www.isotc211.org/2005/gsr"
+#    ns_xsi = "http://www.w3.org/2001/XMLSchema-instance"
+#    ns_tran = "http://www.opengis.net/citygml/transportation/3.0"
+#    ns_gmd = "http://www.isotc211.org/2005/gmd"
+#    ns_gts = "http://www.isotc211.org/2005/gts"
+#    ns_veg = "http://www.opengis.net/citygml/vegetation/3.0"
+#    ns_xAL = "urn:oasis:names:tc:ciq:xal:3"
+#    ns_dem = "http://www.opengis.net/citygml/relief/3.0"
+ #   ns_frn = "http://www.opengis.net/citygml/cityfurniture/3.0"
+ #   ns_tun = "http://www.opengis.net/citygml/tunnel/3.0"
+ #   ns_wtr = "http://www.opengis.net/citygml/waterbody/3.0"
 
 nsmap = {
     None: ns_citygml,
@@ -61,6 +83,7 @@ def polydecomposer(polygon):
 
 def polygonFinder(GMLelement):
     """Find the <gml:polygon> element."""
+    #print("NSgml:", ns_gml)
     polygonsLocal = GMLelement.findall('.//{%s}Polygon' % ns_gml)
     #print(polygonsLocal)
 

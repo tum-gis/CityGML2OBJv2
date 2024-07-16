@@ -1,6 +1,6 @@
 ##!/usr/bin/python
 # -*- coding: utf-8 -*-
-
+import config
 # The MIT License (MIT)
 
 # This code is part of the CityGML2OBJs package
@@ -39,6 +39,7 @@ import itertools
 import matplotlib.pyplot as plt
 import CityGMLTranslation as cgt
 from decimal import Decimal
+from config import setVersion
 
 # -- ARGUMENTS
 # -i -- input directory (it will read and convert ALL CityGML files in a directory)
@@ -103,13 +104,13 @@ def poly_to_obj(poly, cl, material=None):
     e, i = markup3dmodule.polydecomposer(poly)
     # -- Points forming the exterior LinearRing
     epoints = markup3dmodule.GMLpoints(e[0])
-
+    #print(epoints)
     # -- Clean recurring points, except the last one
     last_ep = epoints[-1]
     epoints_clean = list(remove_reccuring(epoints))
     epoints_clean.append(last_ep)
-    #print("epoints: ", epoints)
-    # print("epoints_clean: ", epoints_clean)
+    # print("epoints: ", epoints)
+    #print("epoints_clean: ", epoints_clean)
 
     # -- LinearRing(s) forming the interior
     irings = []
@@ -174,6 +175,7 @@ def poly_to_obj(poly, cl, material=None):
             else:
                 t = polygon3dmodule.triangulation(epoints_clean, irings)
 
+
         except:
 
             t = []
@@ -218,6 +220,10 @@ PARSER.add_argument('-tC', '--translateCityGML',
 
 PARSER.add_argument('-tCw', '--translateCityGMLwrite',
                     help='Perform a Translation of the CityGML Dataset into a local CRS before further processing. The translation parameters are stored in a designated .txt file. No Translation is default ',
+                    required=False)
+
+PARSER.add_argument('-sepC', '--separateComponents',
+                    help='Save each building component into an individual file with the filename serving as an identifier.',
                     required=False)
 
 # End of changes by Th_Fr
@@ -298,6 +304,14 @@ elif TRANSLATECGMLW == '0':
 else:
     TRANSLATECGMLW = False
 
+SEPARATERCOMPONENTS = ARGS['separateComponents']
+if SEPARATERCOMPONENTS == '1':
+    SEPARATERCOMPONENTS = True
+elif SEPARATERCOMPONENTS == '0':
+    SEPARATERCOMPONENTS = False
+else:
+    SEPARATERCOMPONENTS = False
+
 # End of Changes by Th_Fr
 
 
@@ -340,7 +354,7 @@ def mtl(att, min_value, max_value, res):
 
 # -- Start of the program
 print("CityGML2OBJ. Searching for CityGML files...")
-
+global _VERSION
 # -- Find all CityGML files in the directory
 os.chdir(DIRECTORY)
 # -- Supported extensions
@@ -360,6 +374,8 @@ for f in files_found:
     # -- Determine CityGML version
     # If 1.0
     if root.tag == "{http://www.opengis.net/citygml/1.0}CityModel":
+        print("CityGML 1.0")
+        config.setVersion(1)
         # -- Name spaces
         ns_citygml = "http://www.opengis.net/citygml/1.0"
         ns_gml = "http://www.opengis.net/gml"
@@ -377,8 +393,38 @@ for f in files_found:
         ns_brid = "http://www.opengis.net/citygml/bridge/1.0"
         ns_app = "http://www.opengis.net/citygml/appearance/1.0"
 
+    # todo: added by Th_Fr
+    elif root.tag == "{http://www.opengis.net/citygml/3.0}CityModel":
+        print("CityGML 3.0")
+        config.setVersion(3)
+        ns_citygml = "http://www.opengis.net/citygml/3.0"
+        ns_con = "http://www.opengis.net/citygml/construction/3.0"
+        ns_xlink = "http://www.w3.org/1999/xlink"
+        ns_gml = "http://www.opengis.net/gml/3.2"
+        ns_bldg = "http://www.opengis.net/citygml/building/3.0"
+        ns_app = "http://www.opengis.net/citygml/appearance/3.0"
+        ns_pcl = "http://www.opengis.net/citygml/pointcloud/3.0"
+        ns_gen = "http://www.opengis.net/citygml/generics/3.0"
+        ns_gss = "http://www.isotc211.org/2005/gss"
+        na_pfx0 = "urn:oasis:names:tc:ciq:xsdschema:xAL:2.0"
+        ns_gsr = "http://www.isotc211.org/2005/gsr"
+        ns_xsi = "http://www.w3.org/2001/XMLSchema-instance"
+        ns_gco = "http://www.isotc211.org/2005/gco"
+        ns_tran = "http://www.opengis.net/citygml/transportation/3.0"
+        ns_gmd = "http://www.isotc211.org/2005/gmd"
+        ns_gts = "http://www.isotc211.org/2005/gts"
+        ns_veg = "http://www.opengis.net/citygml/vegetation/3.0"
+        ns_xAL = "urn:oasis:names:tc:ciq:xal:3"
+        ns_dem = "http://www.opengis.net/citygml/relief/3.0"
+        ns_brid = "http://www.opengis.net/citygml/bridge/3.0"
+        ns_frn = "http://www.opengis.net/citygml/cityfurniture/3.0"
+        ns_tun = "http://www.opengis.net/citygml/tunnel/3.0"
+        ns_wtr = "http://www.opengis.net/citygml/waterbody/3.0"
+
     # -- Else probably means 2.0
     else:
+        print("CityGML 2.0")
+        config.setVersion(2)
         # -- Name spaces
         ns_citygml = "http://www.opengis.net/citygml/2.0"
 
@@ -419,16 +465,14 @@ for f in files_found:
 
     if TRANSLATECGML:
         cgt.translateToLocalCRS(CITYGML, FILENAME, root, ns_bldg, ns_gml, ns_citygml, ns_frn, ns_veg, RESULT,
-                                 write2file=False, applyHeight=Decimal("0"))  # Todo: by TH_Fr: Diese Funktion ist noch nicht fertig
+                                write2file=False,
+                                applyHeight=Decimal("0"))  # Todo: by TH_Fr: Diese Funktion ist noch nicht fertig
 
     if TRANSLATECGMLW:
         cgt.translateToLocalCRS(CITYGML, FILENAME, root, ns_bldg, ns_gml, ns_citygml, ns_frn, ns_veg, RESULT,
                                 write2file=True, applyHeight=Decimal("0"))
 
-
     # End of changes by Th_FR
-
-
 
     # -- Empty lists for cityobjects and buildings
     cityObjects = []
@@ -447,8 +491,6 @@ for f in files_found:
         output['All'].append("mtllib colormap.mtl\n")
     vertices_output['All'] = []
     face_output['All'] = []
-
-
 
     # -- If the semantic option was invoked, this part adds additional dictionaries.
     if SEMANTICS:
@@ -474,7 +516,6 @@ for f in files_found:
     vertices['Other'] = []
     face_output['Other'] = []
     output['Other'] = []
-
 
     # -- Find all instances of cityObjectMember and put them in a list
     for obj in root.getiterator('{%s}cityObjectMember' % ns_citygml):
@@ -523,6 +564,7 @@ for f in files_found:
 
             # -- If the object option is on, get the name for each building or create one
             if OBJECTS:
+                # print("yeet")
                 ob = b.xpath("@g:id", namespaces={'g': ns_gml})
                 if not ob:
                     ob = b_counter

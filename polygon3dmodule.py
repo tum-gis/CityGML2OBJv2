@@ -484,7 +484,8 @@ def calculate_polygon_normal(poly):
     num_vertices = len(vertices)
 
     # Calculate weighted centroid
-    centroid = centroid(vertices)
+    #print("here b")
+    centroid1 = centroid(vertices)
 
     # Compute the normal vector using cross product of edges
     normal = np.zeros(3)
@@ -492,9 +493,9 @@ def calculate_polygon_normal(poly):
         j = (i + 1) % num_vertices
         vi = vertices[i]
         vj = vertices[j]
-        normal[0] += (vi[1] - centroid[1]) * (vj[2] - centroid[2]) - (vi[2] - centroid[2]) * (vj[1] - centroid[1])
-        normal[1] += (vi[2] - centroid[2]) * (vj[0] - centroid[0]) - (vi[0] - centroid[0]) * (vj[2] - centroid[2])
-        normal[2] += (vi[0] - centroid[0]) * (vj[1] - centroid[1]) - (vi[1] - centroid[1]) * (vj[0] - centroid[0])
+        normal[0] += (vi[1] - centroid1[1]) * (vj[2] - centroid1[2]) - (vi[2] - centroid1[2]) * (vj[1] - centroid1[1])
+        normal[1] += (vi[2] - centroid1[2]) * (vj[0] - centroid1[0]) - (vi[0] - centroid1[0]) * (vj[2] - centroid1[2])
+        normal[2] += (vi[0] - centroid1[0]) * (vj[1] - centroid1[1]) - (vi[1] - centroid1[1]) * (vj[0] - centroid1[0])
 
     norm = np.linalg.norm(normal)
     if norm != 0:
@@ -555,6 +556,7 @@ def triangulation(e, i):
     # -- If the polygon is vertical
     #normal = unit_normal(temppolypoints[0], temppolypoints[1], temppolypoints[2])
     normal = calculate_polygon_normal(temppolypoints)
+
     if math.fabs(normal[2]) < 10e-2:
         vertical = True
         #print("The polygon is vertical")
