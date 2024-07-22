@@ -1,5 +1,3 @@
-
-
 def setVersion(version):
  global VERSION
  VERSION = version

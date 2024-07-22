@@ -35,7 +35,6 @@ import numpy as np
 # Setting the precision of Decimal
 getcontext().prec = 28
 
-
 def performStableAddition(number1, number2):
     # Input: string number1, string number 2, output: string sum
     # Determine the number of positions after the comma.
