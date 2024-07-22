@@ -53,8 +53,8 @@ def specifyVersion():
     global ns_wtr
     global nsmap
 
-    print("config.getVerision", config.getVersion())
-    if config.getVersion() == 2:
+    #print("config.getVerision", config.getVersion())
+    if config.getVersion() == 2 or config.getVersion() == 1:
         # -- Name spaces for CityGML 2.0
         ns_citygml = "http://www.opengis.net/citygml/2.0"
         ns_gml = "http://www.opengis.net/gml"
