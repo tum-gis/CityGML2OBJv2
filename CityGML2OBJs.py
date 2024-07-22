@@ -395,7 +395,7 @@ for f in files_found:
         ns_brid = "http://www.opengis.net/citygml/bridge/1.0"
         ns_app = "http://www.opengis.net/citygml/appearance/1.0"
 
-    # todo: added by Th_Fr
+    # added by Th_Fr
     elif root.tag == "{http://www.opengis.net/citygml/3.0}CityModel":
         print("CityGML 3.0")
         config.setVersion(3)
@@ -567,7 +567,6 @@ for f in files_found:
             if OBJECTS:
                 # print("yeet")
                 ob = b.xpath("@g:id", namespaces={'g': ns_gml})
-                print(f"ob: {ob}")
                 if not ob:
                     ob = b_counter
                 else:
@@ -619,12 +618,15 @@ for f in files_found:
                 # -- Process each opening
                 for o in openings:
                     for child in o.getiterator():
-                        unique_identifier = child.xpath("@g:id", namespaces={'g': ns_gml}) # todo: mus noch geprüft werden
+                        unique_identifier = child.xpath("@g:id", namespaces={'g': ns_gml})
                         if child.tag == '{%s}Window' % ns_bldg or child.tag == '{%s}Door' % ns_bldg:
+                            print(unique_identifier)
                             if child.tag == '{%s}Window' % ns_bldg:
                                 t = 'Window'
+                                print(t)
                             else:
                                 t = 'Door'
+                                print(t)
                             polys = markup3dmodule.polygonFinder(o)
                             for poly in polys:
                                 poly_to_obj(poly, t)
@@ -639,14 +641,16 @@ for f in files_found:
                     firstF = True
                     for feature in cls:
                         # -- If it is the first feature, print the object identifier
+                        unique_identifier = feature.xpath("@g:id", namespaces={
+                            'g': ns_gml})
                         if OBJECTS and firstF:
-                            face_output[cl].append('o ' + str(ob) + '\n')
+                            face_output[cl].append('o ' + str(ob) + "_" + str(unique_identifier) + '\n')
+
                             firstF = False
                         # -- This is not supposed to happen, but just to be sure...
                         if feature.tag == '{%s}Window' % ns_bldg or feature.tag == '{%s}Door' % ns_bldg:
                             continue
 
-                        unique_identifier = feature.xpath("@g:id", namespaces={'g': ns_gml}) # todo: ob entspricht der gml:parentID und unique identifier der gml:id des entsprechenden komponenten.
                         print(f"unigue identifier: {str(ob) + str(unique_identifier)}")
 
                         # -- Find all polygons in this semantic boundary hierarchy
