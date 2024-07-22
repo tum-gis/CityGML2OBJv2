@@ -30,6 +30,7 @@ import config
 
 import markup3dmodule
 import polygon3dmodule
+import componentseparationmodule as csm
 from lxml import etree
 import os
 import argparse
@@ -104,13 +105,13 @@ def poly_to_obj(poly, cl, material=None):
     e, i = markup3dmodule.polydecomposer(poly)
     # -- Points forming the exterior LinearRing
     epoints = markup3dmodule.GMLpoints(e[0])
-    #print(epoints)
+    # print(epoints)
     # -- Clean recurring points, except the last one
     last_ep = epoints[-1]
     epoints_clean = list(remove_reccuring(epoints))
     epoints_clean.append(last_ep)
     # print("epoints: ", epoints)
-    #print("epoints_clean: ", epoints_clean)
+    # print("epoints_clean: ", epoints_clean)
 
     # -- LinearRing(s) forming the interior
     irings = []
@@ -307,9 +308,6 @@ else:
 SEPARATERCOMPONENTS = ARGS['separateComponents']
 if SEPARATERCOMPONENTS == '1':
     SEPARATERCOMPONENTS = True
-    # Setting this parameter to true implies that -g and -s is true
-    OBJECTS = True
-    SEMANTICS = True
 elif SEPARATERCOMPONENTS == '0':
     SEPARATERCOMPONENTS = False
 else:
@@ -552,6 +550,9 @@ for f in files_found:
         # -- Do each building separately
 
         for b in buildings:
+            # todo: addd by th_fr
+            if SEPARATERCOMPONENTS:
+                csm.separateComponents(b, b_counter, RESULT)
 
             # -- Build the local list of vertices to speed up the indexing
             local_vertices = {}
@@ -565,7 +566,6 @@ for f in files_found:
             b_counter += 1
             # -- If the object option is on, get the name for each building or create one
             if OBJECTS:
-                # print("yeet")
                 ob = b.xpath("@g:id", namespaces={'g': ns_gml})
                 if not ob:
                     ob = b_counter
@@ -605,7 +605,7 @@ for f in files_found:
                     polycounter = polycounter + 1
 
             # -- Semantic decomposition, with taking special care about the openings
-            if SEMANTICS: #todo: hier muss noch eine Fallunterscheidung für CityGML 3.0 eingeführt werden
+            if SEMANTICS:
                 # -- First take care about the openings since they can mix up
                 openings = []
                 openingpolygons = []
@@ -620,13 +620,13 @@ for f in files_found:
                     for child in o.getiterator():
                         unique_identifier = child.xpath("@g:id", namespaces={'g': ns_gml})
                         if child.tag == '{%s}Window' % ns_bldg or child.tag == '{%s}Door' % ns_bldg:
-                            print(unique_identifier)
+                            #print(unique_identifier)
                             if child.tag == '{%s}Window' % ns_bldg:
                                 t = 'Window'
-                                print(t)
+                                #print(t)
                             else:
                                 t = 'Door'
-                                print(t)
+                                #print(t)
                             polys = markup3dmodule.polygonFinder(o)
                             for poly in polys:
                                 poly_to_obj(poly, t)
@@ -651,7 +651,7 @@ for f in files_found:
                         if feature.tag == '{%s}Window' % ns_bldg or feature.tag == '{%s}Door' % ns_bldg:
                             continue
 
-                        print(f"unigue identifier: {str(ob) + str(unique_identifier)}")
+                        #print(f"unigue identifier: {str(ob) + str(unique_identifier)}")
 
                         # -- Find all polygons in this semantic boundary hierarchy
 
