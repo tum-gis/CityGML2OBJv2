@@ -39,6 +39,22 @@ def clean_filename(s):
     cleaned = cleaned.strip()
     return cleaned
 
+
+def separate_string(s):
+    # Define the regex pattern
+    pattern = r'\{([^}]*)\}(.*)'
+
+    # Search for the pattern in the input string
+    match = re.search(pattern, s)
+
+    if match:
+        # Extract the parts
+        inside_braces = match.group(1)
+        outside_braces = match.group(2)
+        return inside_braces, outside_braces
+    else:
+        return None, None
+
 def specifyVersion():
     global ns_citygml
     global ns_gml
@@ -183,7 +199,7 @@ def separateComponents(b, b_counter, path):
                     for surfaces in poly_t:
                         t_ges = t_ges + surfaces
                 #print("t_ges: ",type(t_ges[0][0][0]))
-                filename = path+str(bez)+"_"+str(unique_identifier)+".obj"
+                filename = path+ str(buildingid) + "_" + str(bez)+"_"+str(unique_identifier)+".obj"
                 write_obj_file(t_ges, filename)
 
 
@@ -204,8 +220,9 @@ def separateComponents(b, b_counter, path):
             if feature.tag == '{%s}Window' % ns_bldg or feature.tag == '{%s}Door' % ns_bldg:
                 continue
 
-            #print(f"{feature.tag}; unigue identifier: {str(ob) + str(unique_identifier)}")
-
+            print(f"{feature.tag}; unigue identifier: {str(ob) + str(unique_identifier)}")
+            tag = feature.tag
+            _, cleaned_tag = separate_string(tag)
             # -- Find all polygons in this semantic boundary hierarchy
             poly_t = []
             t_ges = []
@@ -251,7 +268,7 @@ def separateComponents(b, b_counter, path):
                     for surfaces in poly_t:
                         t_ges = t_ges + surfaces
                 #print("t_ges: ", type(t_ges[0][0][0]))
-                filename = path + "_" + cleaned_filename + ".obj"
+                filename = path + str(buildingid) + "_" + cleaned_tag + "_" + cleaned_filename + ".obj"
                 write_obj_file(t_ges, filename)
 
     return 0
