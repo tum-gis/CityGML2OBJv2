@@ -2,7 +2,8 @@ import re
 import config
 import markup3dmodule as m3dm
 import polygon3dmodule as p3dm
-
+from concurrent.futures import ThreadPoolExecutor
+import os
 def write_obj_file(surfaces, filename):
     with open(filename, 'w') as file:
         vertex_index = 1
@@ -123,6 +124,71 @@ def specifyVersion():
         'xlink': ns_xlink,
         'dem': ns_dem
     }
+
+# this is an experimantal method for parallelization
+def processOpening(o, path, buildingid):
+    for child in o.getiterator():
+        unique_identifier = child.xpath("@g:id", namespaces={'g': ns_gml})
+        if child.tag == '{%s}Window' % ns_bldg or child.tag == '{%s}Door' % ns_bldg:
+            # print(unique_identifier)
+            if child.tag == '{%s}Window' % ns_bldg:
+                bez = 'Window'
+                # print(t)
+            else:
+                bez = 'Door'
+
+            poly_t = []
+            t_ges = []
+            polys = m3dm.polygonFinder(o)
+            for poly in polys:
+                # -- Decompose the polygon into exterior and interior
+                e, i = m3dm.polydecomposer(poly)
+                # -- Points forming the exterior LinearRing
+                epoints = m3dm.GMLpoints(e[0])
+                # print(epoints)
+                # -- Clean recurring points, except the last one
+                last_ep = epoints[-1]
+                epoints_clean = list(remove_reccuring(epoints))
+                epoints_clean.append(last_ep)
+                # print("epoints: ", epoints)
+                # print("epoints_clean: ", epoints_clean)
+
+                # -- LinearRing(s) forming the interior
+                irings = []
+                for iring in i:
+                    ipoints = m3dm.GMLpoints(iring)
+                    # -- Clean them in the same manner as the exterior ring
+                    last_ip = ipoints[-1]
+                    ipoints_clean = list(remove_reccuring(ipoints))
+                    ipoints_clean.append(last_ip)
+                    irings.append(ipoints_clean)
+
+                try:
+                    t = p3dm.triangulation(epoints_clean, irings)
+                    poly_t.append(t)
+                except:
+                    t = []
+
+                for surfaces in poly_t:
+                    t_ges = t_ges + surfaces
+            # print("t_ges: ",type(t_ges[0][0][0]))
+            filename = path + str(buildingid) + "_" + str(bez) + "_" + str(unique_identifier) + ".obj"
+            write_obj_file(t_ges, filename)
+
+
+
+# another experimental function for parallelization
+def process_openings_parallel(openings, path, buildingid):
+    num_cores = os.cpu_count()
+    print(f"Number of CPU cores: {num_cores}")
+    with ThreadPoolExecutor(max_workers=num_cores) as executor:
+        # Submitting all tasks
+        futures = [executor.submit(processOpening, o, path, buildingid) for o in openings]
+
+        # Ensuring all tasks are completed
+        for future in futures:
+            future.result()
+
 def separateComponents(b, b_counter, path):
     output = {}
     specifyVersion()
@@ -142,8 +208,6 @@ def separateComponents(b, b_counter, path):
     else:
         ob = buildingid[0]
 
-
-    # -- First take care about the openings since they can mix up
     openings = []
     openingpolygons = []
     for child in b.getiterator():
@@ -152,57 +216,7 @@ def separateComponents(b, b_counter, path):
             for o in child.findall('.//{%s}Polygon' % ns_gml):
                 openingpolygons.append(o)
 
-    # -- Process each opening
-    for o in openings:
-        for child in o.getiterator():
-            unique_identifier = child.xpath("@g:id", namespaces={'g': ns_gml})
-            if child.tag == '{%s}Window' % ns_bldg or child.tag == '{%s}Door' % ns_bldg:
-                # print(unique_identifier)
-                if child.tag == '{%s}Window' % ns_bldg:
-                    bez = 'Window'
-                    # print(t)
-                else:
-                    bez = 'Door'
-
-                poly_t = []
-                t_ges=[]
-                polys = m3dm.polygonFinder(o)
-                for poly in polys:
-                    # -- Decompose the polygon into exterior and interior
-                    e, i = m3dm.polydecomposer(poly)
-                    # -- Points forming the exterior LinearRing
-                    epoints = m3dm.GMLpoints(e[0])
-                    # print(epoints)
-                    # -- Clean recurring points, except the last one
-                    last_ep = epoints[-1]
-                    epoints_clean = list(remove_reccuring(epoints))
-                    epoints_clean.append(last_ep)
-                    # print("epoints: ", epoints)
-                    # print("epoints_clean: ", epoints_clean)
-
-                    # -- LinearRing(s) forming the interior
-                    irings = []
-                    for iring in i:
-                        ipoints = m3dm.GMLpoints(iring)
-                        # -- Clean them in the same manner as the exterior ring
-                        last_ip = ipoints[-1]
-                        ipoints_clean = list(remove_reccuring(ipoints))
-                        ipoints_clean.append(last_ip)
-                        irings.append(ipoints_clean)
-
-                    try:
-                        t = p3dm.triangulation(epoints_clean, irings)
-                        poly_t.append(t)
-                    except:
-                        t = []
-
-                    for surfaces in poly_t:
-                        t_ges = t_ges + surfaces
-                #print("t_ges: ",type(t_ges[0][0][0]))
-                filename = path+ str(buildingid) + "_" + str(bez)+"_"+str(unique_identifier)+".obj"
-                write_obj_file(t_ges, filename)
-
-
+    process_openings_parallel(openings, path, buildingid)
 
     # -- Process other thematic boundaries
     for cl in output:

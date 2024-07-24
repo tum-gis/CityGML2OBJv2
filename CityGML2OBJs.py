@@ -41,6 +41,7 @@ import matplotlib.pyplot as plt
 import CityGMLTranslation as cgt
 from decimal import Decimal
 from config import setVersion
+import time
 
 # -- ARGUMENTS
 # -i -- input directory (it will read and convert ALL CityGML files in a directory)
@@ -351,7 +352,8 @@ def mtl(att, min_value, max_value, res):
 
 
 # -----------------------------------------------------------------
-
+# Start time
+start_time = time.time()
 # -- Start of the program
 print("CityGML2OBJ. Searching for CityGML files...")
 global _VERSION
@@ -755,3 +757,9 @@ for f in files_found:
     else:
         print(
             "\tThere is a problem with this file: no cityObjects have been found. Please check if the file complies to CityGML.")
+
+# End time
+end_time = time.time()
+# Calculate elapsed time
+elapsed_time = end_time - start_time
+print(f"Elapsed time: {elapsed_time:.2f} seconds")
