@@ -470,7 +470,7 @@ def weighted_centroid(vertices):
 
     return centroid / (3 * total_area)
 
-def calculate_polygon_normal(poly):
+def calculate_polygon_normal_old(poly):
     """
        Calculate the normal vector of a polygon using a weighted centroid and cross product approach.
 
@@ -504,6 +504,52 @@ def calculate_polygon_normal(poly):
         normal = np.array([0.0, 0.0, 0.0])
 
     return normal
+
+
+def calculate_polygon_normal(polygon):
+    """
+    Calculate the surface normal of a polygon.
+
+    Parameters:
+    polygon (list): A list of vertices, where each vertex is a list of three coordinates [x, y, z].
+
+    Returns:
+    np.array: A normalized vector representing the surface normal.
+    """
+
+    normal = np.array([0.0, 0.0, 0.0])
+    num_verts = len(polygon)
+
+    for i in range(num_verts):
+        current = np.array(polygon[i])
+        next_vert = np.array(polygon[(i + 1) % num_verts])
+
+        normal[0] += (current[1] - next_vert[1]) * (current[2] + next_vert[2])
+        normal[1] += (current[2] - next_vert[2]) * (current[0] + next_vert[0])
+        normal[2] += (current[0] - next_vert[0]) * (current[1] + next_vert[1])
+
+    normal = normalize(normal)
+    return normal
+
+
+def normalize(vector):
+    """
+    Normalize a vector.
+
+    Parameters:
+    vector (np.array): A vector to normalize.
+
+    Returns:
+    np.array: A normalized vector.
+    """
+    norm = np.linalg.norm(vector)
+    if norm == 0:
+        return vector
+    return vector / norm
+
+
+
+
 
 def triangulation(e, i):
     """Triangulate the polygon with the exterior and interior list of points. Works only for convex polygons.

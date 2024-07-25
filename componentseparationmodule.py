@@ -2,8 +2,27 @@ import re
 import config
 import markup3dmodule as m3dm
 import polygon3dmodule as p3dm
-from concurrent.futures import ThreadPoolExecutor
-import os
+
+import numpy as np
+import open3d as o3d
+import sys
+
+def perturb_points(points, perturbation_scale=1e-6):
+    """
+    Perturb the points slightly to avoid degenerate cases.
+
+    Parameters:
+        points (list of tuple of floats): A list where each element is a tuple (x, y, z) representing a 3D point.
+        perturbation_scale (float): The maximum magnitude of the perturbation applied to each coordinate.
+
+    Returns:
+        list of list of floats: Perturbed list of points.
+    """
+    points_array = np.array(points)
+    perturbation = np.random.uniform(-perturbation_scale, perturbation_scale, points_array.shape)
+    perturbed_points = points_array + perturbation
+    return perturbed_points.tolist()
+
 def write_obj_file(surfaces, filename):
     with open(filename, 'w') as file:
         vertex_index = 1
@@ -81,7 +100,24 @@ def specifyVersion():
     global nsmap
 
     #print("config.getVerision", config.getVersion())
-    if config.getVersion() == 2 or config.getVersion() == 1:
+    if config.getVersion() == 1:
+        # -- Name spaces for CityGML 2.0
+        ns_citygml = "http://www.opengis.net/citygml/1.0"
+        ns_gml = "http://www.opengis.net/gml"
+        ns_bldg = "http://www.opengis.net/citygml/building/1.0"
+        ns_tran = "http://www.opengis.net/citygml/transportation/1.0"
+        ns_veg = "http://www.opengis.net/citygml/vegetation/1.0"
+        ns_gen = "http://www.opengis.net/citygml/generics/1.0"
+        ns_xsi = "http://www.w3.org/2001/XMLSchema-instance"
+        ns_xAL = "urn:oasis:names:tc:ciq:xsdschema:xAL:1.0"
+        ns_xlink = "http://www.w3.org/1999/xlink"
+        ns_dem = "http://www.opengis.net/citygml/relief/1.0"
+        ns_frn = "http://www.opengis.net/citygml/cityfurniture/1.0"
+        ns_tun = "http://www.opengis.net/citygml/tunnel/1.0"
+        ns_wtr = "http://www.opengis.net/citygml/waterbody/1.0"
+        ns_brid = "http://www.opengis.net/citygml/bridge/1.0"
+        ns_app = "http://www.opengis.net/citygml/appearance/1.0"
+    if config.getVersion() == 2:
         # -- Name spaces for CityGML 2.0
         ns_citygml = "http://www.opengis.net/citygml/2.0"
         ns_gml = "http://www.opengis.net/gml"
@@ -125,6 +161,69 @@ def specifyVersion():
         'dem': ns_dem
     }
 
+# this is an experimental method for parallelization
+def processPolygon(poly):
+    epoints_clean = poly[0]
+    irings = poly[1]
+
+    try:
+        t = p3dm.triangulation(epoints_clean, irings)
+        #poly_t.append(t)
+    except:
+        t = []
+    return t
+
+
+def compute_convex_hull(points):
+    """
+    Computes the convex hull of a set of 3D points using Open3D, including triangulation of the hull's faces.
+
+    Parameters:
+        points (list of tuple of floats): A list where each element is a tuple (x, y, z) representing a 3D point.
+
+    Returns:
+        list: A list of faces, where each face is a list of vertex coordinates forming that face.
+    """
+    # Convert the list of points to a NumPy array
+    points_array = np.array(points)
+    perturbed_points = perturb_points(points_array)
+
+    # Create an Open3D PointCloud object
+    pcd = o3d.geometry.PointCloud()
+    pcd.points = o3d.utility.Vector3dVector(perturbed_points)
+
+    # Compute the convex hull
+    hull, triangles = pcd.compute_convex_hull()
+
+    # Extract vertices and faces (triangles)
+    hull_vertices = np.asarray(hull.vertices)
+    hull_triangles = np.asarray(hull.triangles)
+
+    # Prepare the faces in the desired format
+    faces = []
+    for triangle in hull_triangles:
+        face = [list(hull_vertices[vertex]) for vertex in triangle]
+        faces.append(face)
+
+    return faces
+
+def process_polygons_parallel(polys):
+    data = []
+    epoints_clean = []
+    for poly in polys:
+        e, i = m3dm.polydecomposer(poly)
+        epoints = m3dm.GMLpoints(e[0])
+        # print(epoints)
+        # -- Clean recurring points, except the last one
+        last_ep = epoints[-1]
+        epoints_clean = list(remove_reccuring(epoints))
+        epoints_clean.append(last_ep)
+        for point in epoints_clean:
+            data.append(point)
+    #print("Data: ", data)
+    return data
+
+
 # this is an experimantal method for parallelization
 def processOpening(o, path, buildingid):
     for child in o.getiterator():
@@ -136,58 +235,27 @@ def processOpening(o, path, buildingid):
                 # print(t)
             else:
                 bez = 'Door'
-
-            poly_t = []
-            t_ges = []
             polys = m3dm.polygonFinder(o)
-            for poly in polys:
-                # -- Decompose the polygon into exterior and interior
-                e, i = m3dm.polydecomposer(poly)
-                # -- Points forming the exterior LinearRing
-                epoints = m3dm.GMLpoints(e[0])
-                # print(epoints)
-                # -- Clean recurring points, except the last one
-                last_ep = epoints[-1]
-                epoints_clean = list(remove_reccuring(epoints))
-                epoints_clean.append(last_ep)
-                # print("epoints: ", epoints)
-                # print("epoints_clean: ", epoints_clean)
-
-                # -- LinearRing(s) forming the interior
-                irings = []
-                for iring in i:
-                    ipoints = m3dm.GMLpoints(iring)
-                    # -- Clean them in the same manner as the exterior ring
-                    last_ip = ipoints[-1]
-                    ipoints_clean = list(remove_reccuring(ipoints))
-                    ipoints_clean.append(last_ip)
-                    irings.append(ipoints_clean)
-
-                try:
-                    t = p3dm.triangulation(epoints_clean, irings)
-                    poly_t.append(t)
-                except:
-                    t = []
-
-                for surfaces in poly_t:
-                    t_ges = t_ges + surfaces
-            # print("t_ges: ",type(t_ges[0][0][0]))
+            exterior_points = process_polygons_parallel(polys)
+            t = compute_convex_hull(exterior_points)
             filename = path + str(buildingid) + "_" + str(bez) + "_" + str(unique_identifier) + ".obj"
-            write_obj_file(t_ges, filename)
+            write_obj_file(t, filename)
 
 
 
 # another experimental function for parallelization
 def process_openings_parallel(openings, path, buildingid):
-    num_cores = os.cpu_count()
-    print(f"Number of CPU cores: {num_cores}")
-    with ThreadPoolExecutor(max_workers=num_cores) as executor:
-        # Submitting all tasks
-        futures = [executor.submit(processOpening, o, path, buildingid) for o in openings]
+    num_cores = 32
+    #print(f"Number of CPU cores: {num_cores}")
+    for o in openings:
+        processOpening(o, path, buildingid)
+    #with ThreadPoolExecutor(max_workers=num_cores) as executor:
+    #    # Submitting all tasks
+    #    futures = [executor.submit(processOpening, o, path, buildingid) for o in openings]
 
         # Ensuring all tasks are completed
-        for future in futures:
-            future.result()
+    #    for future in futures:
+    #        future.result()
 
 def separateComponents(b, b_counter, path):
     output = {}
@@ -204,9 +272,7 @@ def separateComponents(b, b_counter, path):
     # get the building id for the building
     buildingid = b.xpath("@g:id", namespaces={'g': ns_gml})
     if not buildingid:
-        ob = b_counter
-    else:
-        ob = buildingid[0]
+        buildingid = b_counter
 
     openings = []
     openingpolygons = []
@@ -217,8 +283,10 @@ def separateComponents(b, b_counter, path):
                 openingpolygons.append(o)
 
     process_openings_parallel(openings, path, buildingid)
-
+    #for o in openings:
+        #processOpening(o, path, buildingid)
     # -- Process other thematic boundaries
+    counter = 0
     for cl in output:
         cls = []
         for child in b.getiterator():
@@ -229,12 +297,15 @@ def separateComponents(b, b_counter, path):
             # -- If it is the first feature, print the object identifier
             unique_identifier = feature.xpath("@g:id", namespaces={
                 'g': ns_gml})
+            if str(unique_identifier) == "[]":
+                unique_identifier = str(counter)
+
             cleaned_filename = clean_filename(str(unique_identifier))
             # -- This is not supposed to happen, but just to be sure...
             if feature.tag == '{%s}Window' % ns_bldg or feature.tag == '{%s}Door' % ns_bldg:
                 continue
-
-            print(f"{feature.tag}; unigue identifier: {str(ob) + str(unique_identifier)}")
+            print("unique identifier: ", unique_identifier)
+            #print(f"{feature.tag}; unigue identifier: {str(ob) + str(unique_identifier)}")
             tag = feature.tag
             _, cleaned_tag = separate_string(tag)
             # -- Find all polygons in this semantic boundary hierarchy
@@ -282,7 +353,9 @@ def separateComponents(b, b_counter, path):
                     for surfaces in poly_t:
                         t_ges = t_ges + surfaces
                 #print("t_ges: ", type(t_ges[0][0][0]))
-                filename = path + str(buildingid) + "_" + cleaned_tag + "_" + cleaned_filename + ".obj"
-                write_obj_file(t_ges, filename)
+            filename = path + str(buildingid) + "_" + cleaned_tag + "_" + cleaned_filename + ".obj"
+
+            write_obj_file(t_ges, filename)
+            counter +=1
 
     return 0
