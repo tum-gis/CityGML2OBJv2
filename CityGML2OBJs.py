@@ -556,6 +556,12 @@ for f in files_found:
             # todo: addd by th_fr
             if SEPARATERCOMPONENTS:
                 csm.separateComponents(b, b_counter, RESULT)
+                # End time
+                end_time = time.time()
+                # Calculate elapsed time
+                elapsed_time = end_time - start_time
+                print(f"Elapsed time: {elapsed_time:.2f} seconds")
+                break
 
             # -- Build the local list of vertices to speed up the indexing
             local_vertices = {}

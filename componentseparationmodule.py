@@ -2,10 +2,47 @@ import re
 import config
 import markup3dmodule as m3dm
 import polygon3dmodule as p3dm
-
+import json
 import numpy as np
 import open3d as o3d
-import sys
+import os
+
+
+# diese funktion dient dazu ein JSON file zu schreiben um die meta informationen über die einzelnen objekte zuspeichern
+def add_identifier_to_json(number, tag, parentID, gmlID, json_file_path):
+    """
+    Adds the identifier information for one .obj file to a JSON file.
+
+    Parameters:
+    - number (int): The number corresponding to the .obj file.
+    - tag (str): The tag corresponding to the .obj file.
+    - parentID (str): The parent ID corresponding to the .obj file.
+    - gmlID (str): The gml ID corresponding to the .obj file.
+    - json_file_path (str): Path to the JSON file where identifier information will be stored.
+    """
+    # Dateiname
+    filename = f"{number}.obj"
+
+    # Prüfen, ob die JSON-Datei existiert und laden
+    if os.path.exists(json_file_path):
+        with open(json_file_path, 'r') as json_file:
+            identifiers = json.load(json_file)
+    else:
+        identifiers = {}
+
+    # Neuen Identifier hinzufügen
+    identifiers[filename] = {
+        'tag': tag,
+        'parentID': parentID,
+        'gmlID': gmlID
+    }
+
+    # Zuordnungen in JSON-Datei schreiben
+    with open(json_file_path, 'w') as json_file:
+        json.dump(identifiers, json_file, indent=4)
+
+    print(f"Zuordnung für {filename} wurde gespeichert.")
+
 
 def perturb_points(points, perturbation_scale=1e-6):
     """
@@ -23,15 +60,19 @@ def perturb_points(points, perturbation_scale=1e-6):
     perturbed_points = points_array + perturbation
     return perturbed_points.tolist()
 
-def write_obj_file(surfaces, filename):
+
+def write_obj_file(surfaces, filename, tag, parentid, gmlid, counter, path):
+
     with open(filename, 'w') as file:
         vertex_index = 1
         for triangle in surfaces:
-            #print("surface: ", triangle)
+            # print("surface: ", triangle)
             for vertex in triangle:
                 file.write(f"v {vertex[0]} {vertex[1]} {vertex[2]}\n")
             file.write(f"f {vertex_index} {vertex_index + 1} {vertex_index + 2}\n")
             vertex_index += 3
+    add_identifier_to_json(counter, tag, parentid, gmlid, (path + "index.json"))
+
 
 def remove_reccuring(list_vertices):
     """Removes recurring vertices, which messes up the triangulation.
@@ -43,6 +84,7 @@ def remove_reccuring(list_vertices):
         if str(item) not in found:
             yield item
             found.add(str(item))
+
 
 def clean_filename(s):
     """
@@ -75,6 +117,7 @@ def separate_string(s):
     else:
         return None, None
 
+
 def specifyVersion():
     global ns_citygml
     global ns_gml
@@ -99,7 +142,7 @@ def specifyVersion():
     global ns_wtr
     global nsmap
 
-    #print("config.getVerision", config.getVersion())
+    # print("config.getVerision", config.getVersion())
     if config.getVersion() == 1:
         # -- Name spaces for CityGML 2.0
         ns_citygml = "http://www.opengis.net/citygml/1.0"
@@ -161,6 +204,7 @@ def specifyVersion():
         'dem': ns_dem
     }
 
+
 # this is an experimental method for parallelization
 def processPolygon(poly):
     epoints_clean = poly[0]
@@ -168,7 +212,7 @@ def processPolygon(poly):
 
     try:
         t = p3dm.triangulation(epoints_clean, irings)
-        #poly_t.append(t)
+        # poly_t.append(t)
     except:
         t = []
     return t
@@ -207,6 +251,7 @@ def compute_convex_hull(points):
 
     return faces
 
+
 def process_polygons_parallel(polys):
     data = []
     epoints_clean = []
@@ -220,12 +265,12 @@ def process_polygons_parallel(polys):
         epoints_clean.append(last_ep)
         for point in epoints_clean:
             data.append(point)
-    #print("Data: ", data)
+    # print("Data: ", data)
     return data
 
 
 # this is an experimantal method for parallelization
-def processOpening(o, path, buildingid):
+def processOpening(o, path, buildingid, overall_counter):
     for child in o.getiterator():
         unique_identifier = child.xpath("@g:id", namespaces={'g': ns_gml})
         if child.tag == '{%s}Window' % ns_bldg or child.tag == '{%s}Door' % ns_bldg:
@@ -238,26 +283,13 @@ def processOpening(o, path, buildingid):
             polys = m3dm.polygonFinder(o)
             exterior_points = process_polygons_parallel(polys)
             t = compute_convex_hull(exterior_points)
-            filename = path + str(buildingid) + "_" + str(bez) + "_" + str(unique_identifier) + ".obj"
-            write_obj_file(t, filename)
+            filename = path + str(overall_counter) + ".obj"
+            write_obj_file(t, filename, str(child.tag), buildingid, unique_identifier, overall_counter, path)
 
-
-
-# another experimental function for parallelization
-def process_openings_parallel(openings, path, buildingid):
-    num_cores = 32
-    #print(f"Number of CPU cores: {num_cores}")
-    for o in openings:
-        processOpening(o, path, buildingid)
-    #with ThreadPoolExecutor(max_workers=num_cores) as executor:
-    #    # Submitting all tasks
-    #    futures = [executor.submit(processOpening, o, path, buildingid) for o in openings]
-
-        # Ensuring all tasks are completed
-    #    for future in futures:
-    #        future.result()
 
 def separateComponents(b, b_counter, path):
+    global overall_counter
+    overall_counter = 0
     output = {}
     specifyVersion()
     # comprehensive list of semantic surfaces
@@ -267,7 +299,6 @@ def separateComponents(b, b_counter, path):
 
     for semanticSurface in semanticSurfaces:
         output[semanticSurface] = []
-        # todo add some header
 
     # get the building id for the building
     buildingid = b.xpath("@g:id", namespaces={'g': ns_gml})
@@ -282,9 +313,12 @@ def separateComponents(b, b_counter, path):
             for o in child.findall('.//{%s}Polygon' % ns_gml):
                 openingpolygons.append(o)
 
-    process_openings_parallel(openings, path, buildingid)
-    #for o in openings:
-        #processOpening(o, path, buildingid)
+    # process_openings_parallel(openings, path, buildingid, overall_counter)
+
+    for o in openings:
+        processOpening(o, path, buildingid, overall_counter)
+        overall_counter += 1
+
     # -- Process other thematic boundaries
     counter = 0
     for cl in output:
@@ -297,65 +331,63 @@ def separateComponents(b, b_counter, path):
             # -- If it is the first feature, print the object identifier
             unique_identifier = feature.xpath("@g:id", namespaces={
                 'g': ns_gml})
-            if str(unique_identifier) == "[]":
-                unique_identifier = str(counter)
+            if str(unique_identifier) != "[]":
 
-            cleaned_filename = clean_filename(str(unique_identifier))
-            # -- This is not supposed to happen, but just to be sure...
-            if feature.tag == '{%s}Window' % ns_bldg or feature.tag == '{%s}Door' % ns_bldg:
-                continue
-            print("unique identifier: ", unique_identifier)
-            #print(f"{feature.tag}; unigue identifier: {str(ob) + str(unique_identifier)}")
-            tag = feature.tag
-            _, cleaned_tag = separate_string(tag)
-            # -- Find all polygons in this semantic boundary hierarchy
-            poly_t = []
-            t_ges = []
-            for p in feature.findall('.//{%s}Polygon' % ns_gml):
+                cleaned_filename = clean_filename(str(unique_identifier))
+                # -- This is not supposed to happen, but just to be sure...
+                if feature.tag == '{%s}Window' % ns_bldg or feature.tag == '{%s}Door' % ns_bldg:
+                    continue
+                print("unique identifier: ", unique_identifier)
+                # print(f"{feature.tag}; unigue identifier: {str(ob) + str(unique_identifier)}")
+                tag = feature.tag
+                _, cleaned_tag = separate_string(tag)
+                # -- Find all polygons in this semantic boundary hierarchy
+                poly_t = []
+                t_ges = []
+                for p in feature.findall('.//{%s}Polygon' % ns_gml):
 
-                found_opening = False
-                for optest in openingpolygons:
-                    if p == optest:
-                        found_opening = True
-                        break
-                # -- If there is an opening skip it
-                if found_opening:
-                    pass
-                else:
-                    # -- Decompose the polygon into exterior and interior
-                    e, i = m3dm.polydecomposer(p)
-                    # -- Points forming the exterior LinearRing
-                    epoints = m3dm.GMLpoints(e[0])
-                    # print(epoints)
-                    # -- Clean recurring points, except the last one
-                    last_ep = epoints[-1]
-                    epoints_clean = list(remove_reccuring(epoints))
-                    epoints_clean.append(last_ep)
-                    # print("epoints: ", epoints)
-                    # print("epoints_clean: ", epoints_clean)
+                    found_opening = False
+                    for optest in openingpolygons:
+                        if p == optest:
+                            found_opening = True
+                            break
+                    # -- If there is an opening skip it
+                    if found_opening:
+                        pass
+                    else:
+                        # -- Decompose the polygon into exterior and interior
+                        e, i = m3dm.polydecomposer(p)
+                        # -- Points forming the exterior LinearRing
+                        epoints = m3dm.GMLpoints(e[0])
+                        # print(epoints)
+                        # -- Clean recurring points, except the last one
+                        last_ep = epoints[-1]
+                        epoints_clean = list(remove_reccuring(epoints))
+                        epoints_clean.append(last_ep)
+                        # print("epoints: ", epoints)
+                        # print("epoints_clean: ", epoints_clean)
 
-                    # -- LinearRing(s) forming the interior
-                    irings = []
-                    for iring in i:
-                        ipoints = m3dm.GMLpoints(iring)
-                        # -- Clean them in the same manner as the exterior ring
-                        last_ip = ipoints[-1]
-                        ipoints_clean = list(remove_reccuring(ipoints))
-                        ipoints_clean.append(last_ip)
-                        irings.append(ipoints_clean)
+                        # -- LinearRing(s) forming the interior
+                        irings = []
+                        for iring in i:
+                            ipoints = m3dm.GMLpoints(iring)
+                            # -- Clean them in the same manner as the exterior ring
+                            last_ip = ipoints[-1]
+                            ipoints_clean = list(remove_reccuring(ipoints))
+                            ipoints_clean.append(last_ip)
+                            irings.append(ipoints_clean)
 
-                    try:
-                        t = p3dm.triangulation(epoints_clean, irings)
-                        poly_t.append(t)
-                    except:
-                        t = []
+                        try:
+                            t = p3dm.triangulation(epoints_clean, irings)
+                            poly_t.append(t)
+                        except:
+                            t = []
 
-                    for surfaces in poly_t:
-                        t_ges = t_ges + surfaces
-                #print("t_ges: ", type(t_ges[0][0][0]))
-            filename = path + str(buildingid) + "_" + cleaned_tag + "_" + cleaned_filename + ".obj"
+                        for surfaces in poly_t:
+                            t_ges = t_ges + surfaces
 
-            write_obj_file(t_ges, filename)
-            counter +=1
-
+                filename = path + str(overall_counter) + ".obj"
+                overall_counter += 1
+                write_obj_file(t_ges, filename, str(feature.tag), buildingid, cleaned_filename, overall_counter, path)
+    print("Segmentation finished!")
     return 0
