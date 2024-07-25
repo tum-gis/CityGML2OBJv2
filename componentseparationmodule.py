@@ -62,7 +62,6 @@ def perturb_points(points, perturbation_scale=1e-6):
 
 
 def write_obj_file(surfaces, filename, tag, parentid, gmlid, counter, path):
-
     with open(filename, 'w') as file:
         vertex_index = 1
         for triangle in surfaces:
@@ -84,22 +83,6 @@ def remove_reccuring(list_vertices):
         if str(item) not in found:
             yield item
             found.add(str(item))
-
-
-def clean_filename(s):
-    """
-    Cleans up the input string so that it can be used as a filename.
-
-    :param s: Input string to be cleaned
-    :return: Cleaned string suitable for use as a filename
-    """
-    # Define a regex pattern to match any invalid filename characters, including '
-    invalid_chars = r'[\/:*?"<>|\\\[\]\']'
-    # Replace invalid characters with an underscore
-    cleaned = re.sub(invalid_chars, '_', s)
-    # Trim whitespace from the beginning and end of the filename
-    cleaned = cleaned.strip()
-    return cleaned
 
 
 def separate_string(s):
@@ -204,15 +187,12 @@ def specifyVersion():
         'dem': ns_dem
     }
 
-
-# this is an experimental method for parallelization
 def processPolygon(poly):
     epoints_clean = poly[0]
     irings = poly[1]
 
     try:
         t = p3dm.triangulation(epoints_clean, irings)
-        # poly_t.append(t)
     except:
         t = []
     return t
@@ -248,24 +228,20 @@ def compute_convex_hull(points):
     for triangle in hull_triangles:
         face = [list(hull_vertices[vertex]) for vertex in triangle]
         faces.append(face)
-
     return faces
 
 
 def process_polygons_parallel(polys):
     data = []
-    epoints_clean = []
     for poly in polys:
         e, i = m3dm.polydecomposer(poly)
         epoints = m3dm.GMLpoints(e[0])
-        # print(epoints)
         # -- Clean recurring points, except the last one
         last_ep = epoints[-1]
         epoints_clean = list(remove_reccuring(epoints))
         epoints_clean.append(last_ep)
         for point in epoints_clean:
             data.append(point)
-    # print("Data: ", data)
     return data
 
 
@@ -313,8 +289,6 @@ def separateComponents(b, b_counter, path):
             for o in child.findall('.//{%s}Polygon' % ns_gml):
                 openingpolygons.append(o)
 
-    # process_openings_parallel(openings, path, buildingid, overall_counter)
-
     for o in openings:
         processOpening(o, path, buildingid, overall_counter)
         overall_counter += 1
@@ -332,13 +306,10 @@ def separateComponents(b, b_counter, path):
             unique_identifier = feature.xpath("@g:id", namespaces={
                 'g': ns_gml})
             if str(unique_identifier) != "[]":
-
-                cleaned_filename = clean_filename(str(unique_identifier))
+                cleaned_filename = str(unique_identifier)
                 # -- This is not supposed to happen, but just to be sure...
                 if feature.tag == '{%s}Window' % ns_bldg or feature.tag == '{%s}Door' % ns_bldg:
                     continue
-                print("unique identifier: ", unique_identifier)
-                # print(f"{feature.tag}; unigue identifier: {str(ob) + str(unique_identifier)}")
                 tag = feature.tag
                 _, cleaned_tag = separate_string(tag)
                 # -- Find all polygons in this semantic boundary hierarchy
@@ -359,13 +330,10 @@ def separateComponents(b, b_counter, path):
                         e, i = m3dm.polydecomposer(p)
                         # -- Points forming the exterior LinearRing
                         epoints = m3dm.GMLpoints(e[0])
-                        # print(epoints)
                         # -- Clean recurring points, except the last one
                         last_ep = epoints[-1]
                         epoints_clean = list(remove_reccuring(epoints))
                         epoints_clean.append(last_ep)
-                        # print("epoints: ", epoints)
-                        # print("epoints_clean: ", epoints_clean)
 
                         # -- LinearRing(s) forming the interior
                         irings = []
