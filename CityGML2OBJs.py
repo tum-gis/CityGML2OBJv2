@@ -176,7 +176,6 @@ def poly_to_obj(poly, cl, material=None):
                 t = [epoints_clean[:-1]]
             else:
                 t = polygon3dmodule.triangulation(epoints_clean, irings)
-                #print(t)
 
 
         except:

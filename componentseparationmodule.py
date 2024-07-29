@@ -5,9 +5,116 @@ import polygon3dmodule as p3dm
 import json
 import numpy as np
 import open3d as o3d
+import open3d.core as o3c
 import os
 
 
+def claculateBuildingBoundingVbolume(b):
+    # Schritt 1: identifying all wallsurfaces and roof surfaces of the building
+    output = {}
+    specifyVersion()
+    # comprehensive list of semantic surfaces
+    semanticSurfaces = ['GroundSurface', 'WallSurface', 'RoofSurface', 'ClosureSurface', 'CeilingSurface',]
+
+    for semanticSurface in semanticSurfaces:
+        output[semanticSurface] = []
+    data = []
+    for cl in output:
+
+        cls = []
+        for child in b.getiterator():
+            if child.tag == '{%s}%s' % (ns_bldg, cl):
+                cls.append(child)
+
+        for feature in cls:
+            for p in feature.findall('.//{%s}Polygon' % ns_gml):
+                e, i = m3dm.polydecomposer(p)
+                epoints = m3dm.GMLpoints(e[0])
+                # -- Clean recurring points, except the last one
+                last_ep = epoints[-1]
+                epoints_clean = list(remove_reccuring(epoints))
+                epoints_clean.append(last_ep)
+                for point in epoints_clean:
+                    data.append(point)
+    #print(data)
+
+
+    # Schritt 2: Idetify the Bounding volume
+    # 2.1 creating an open3d pointcloud from all the idetified vertex points
+    pcd = o3d.t.geometry.PointCloud(o3c.Tensor(data, o3c.float32))
+    # 2.2 obtain the axis aligned boundign box of the point cloud
+    axis_aligned_bb = pcd.get_axis_aligned_bounding_box()
+    #print(axis_aligned_bb)
+    # Schritt 3: Construct small triangles that describe the boundign box sufficienly
+    box_points = axis_aligned_bb.get_box_points().numpy().tolist()
+    print(box_points)# todo: hier muss noch der richtige punknt gefunder werden
+
+    # Convert the list to a numpy array for easier manipulation
+    box_points = np.array(box_points)
+
+    # Calculate the min and max coordinates
+    min_x, min_y, min_z = np.min(box_points, axis=0)
+    max_x, max_y, max_z = np.max(box_points, axis=0)
+
+    # Add a 3m buffer
+    buffer = 3
+    min_x -= buffer
+    min_y -= buffer
+    min_z -= buffer
+    max_x += buffer
+    max_y += buffer
+    max_z += buffer
+
+    # Define the buffered bounding box points
+    buffered_box_points = np.array([
+        [min_x, min_y, min_z],
+        [max_x, min_y, min_z],
+        [min_x, max_y, min_z],
+        [min_x, min_y, max_z],
+        [max_x, max_y, max_z],
+        [min_x, max_y, max_z],
+        [max_x, min_y, max_z],
+        [max_x, max_y, min_z]
+    ])
+
+    # Function to create triangles at each corner in 3D
+    def create_corner_triangles(box_points, triangle_size=1):
+        triangles = []
+        for i, point in enumerate(box_points):
+            x, y, z = point
+            if i == 0:  # Bottom-left-front corner
+                triangles.append([[x, y, z], [x + triangle_size, y, z], [x, y + triangle_size, z]])
+            elif i == 1:  # Bottom-right-front corner
+                triangles.append([[x, y, z], [x - triangle_size, y, z], [x, y + triangle_size, z]])
+            elif i == 2:  # Top-left-front corner
+                triangles.append([[x, y, z], [x + triangle_size, y, z], [x, y - triangle_size, z]])
+            elif i == 3:  # Bottom-left-back corner
+                triangles.append([[x, y, z], [x + triangle_size, y, z], [x, y + triangle_size, z]])
+            elif i == 4:  # Top-right-back corner
+                triangles.append([[x, y, z], [x - triangle_size, y, z], [x, y - triangle_size, z]])
+            elif i == 5:  # Top-left-back corner
+                triangles.append([[x, y, z], [x + triangle_size, y, z], [x, y - triangle_size, z]])
+            elif i == 6:  # Bottom-right-back corner
+                triangles.append([[x, y, z], [x - triangle_size, y, z], [x, y + triangle_size, z]])
+            elif i == 7:  # Top-right-front corner
+                triangles.append([[x, y, z], [x - triangle_size, y, z], [x, y - triangle_size, z]])
+        return triangles
+
+    # Create triangles at the corners of the buffered bounding box
+    corner_triangles = create_corner_triangles(buffered_box_points)
+
+    # Convert the triangles to lists
+    corner_triangles = [np.array(triangle).tolist() for triangle in corner_triangles]
+
+    # Print the results
+    print("Buffered Bounding Box Points:")
+    print(buffered_box_points.tolist())
+
+    print("\nCorner Triangles:")
+    for i, triangle in enumerate(corner_triangles):
+        print(f"Triangle {i + 1}: {triangle}")
+
+    return corner_triangles
 # diese funktion dient dazu ein JSON file zu schreiben um die meta informationen über die einzelnen objekte zuspeichern
 def add_identifier_to_json(number, tag, parentID, gmlID, json_file_path):
     """
@@ -61,7 +168,10 @@ def perturb_points(points, perturbation_scale=1e-6):
     return perturbed_points.tolist()
 
 
-def write_obj_file(surfaces, filename, tag, parentid, gmlid, counter, path):
+def write_obj_file(surfaces, filename, tag, parentid, gmlid, counter, path, tr_1):
+    #print("surfaces: ", surfaces)
+    for triangle in tr_1:
+        surfaces.append(triangle)
     with open(filename, 'w') as file:
         vertex_index = 1
         for triangle in surfaces:
@@ -187,17 +297,6 @@ def specifyVersion():
         'dem': ns_dem
     }
 
-def processPolygon(poly):
-    epoints_clean = poly[0]
-    irings = poly[1]
-
-    try:
-        t = p3dm.triangulation(epoints_clean, irings)
-    except:
-        t = []
-    return t
-
-
 def compute_convex_hull(points):
     """
     Computes the convex hull of a set of 3D points using Open3D, including triangulation of the hull's faces.
@@ -245,8 +344,8 @@ def process_polygons_parallel(polys):
     return data
 
 
-# this is an experimantal method for parallelization
-def processOpening(o, path, buildingid, overall_counter):
+# this is an experimental method for parallelization
+def processOpening(o, path, buildingid, overall_counter, tr_1):
     for child in o.getiterator():
         unique_identifier = child.xpath("@g:id", namespaces={'g': ns_gml})
         if child.tag == '{%s}Window' % ns_bldg or child.tag == '{%s}Door' % ns_bldg:
@@ -260,10 +359,11 @@ def processOpening(o, path, buildingid, overall_counter):
             exterior_points = process_polygons_parallel(polys)
             t = compute_convex_hull(exterior_points)
             filename = path + str(overall_counter) + ".obj"
-            write_obj_file(t, filename, str(child.tag), buildingid, unique_identifier, overall_counter, path)
+            write_obj_file(t, filename, str(child.tag), buildingid, unique_identifier, overall_counter, path, tr_1)
 
 
 def separateComponents(b, b_counter, path):
+    tr_1 = claculateBuildingBoundingVbolume(b)
     global overall_counter
     overall_counter = 0
     output = {}
@@ -290,7 +390,7 @@ def separateComponents(b, b_counter, path):
                 openingpolygons.append(o)
 
     for o in openings:
-        processOpening(o, path, buildingid, overall_counter)
+        processOpening(o, path, buildingid, overall_counter, tr_1)
         overall_counter += 1
 
     # -- Process other thematic boundaries
@@ -355,7 +455,8 @@ def separateComponents(b, b_counter, path):
                             t_ges = t_ges + surfaces
 
                 filename = path + str(overall_counter) + ".obj"
+                write_obj_file(t_ges, filename, str(feature.tag), buildingid, cleaned_filename, overall_counter, path, tr_1)
                 overall_counter += 1
-                write_obj_file(t_ges, filename, str(feature.tag), buildingid, cleaned_filename, overall_counter, path)
+
     print("Segmentation finished!")
     return 0
