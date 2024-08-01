@@ -249,7 +249,6 @@ def specifyVersion():
         ns_dem = "http://www.opengis.net/citygml/relief/2.0"
     elif config.getVersion() == 3:
         # -- Name spaces for CityGML 3.0
-        print("here")
         ns_citygml = "http://www.opengis.net/citygml/3.0"
         ns_con = "http://www.opengis.net/citygml/construction/3.0"
         ns_xlink = "http://www.w3.org/1999/xlink"
@@ -374,7 +373,7 @@ def processOpening(o, path, buildingid, overall_counter, tr_1):
                            tr_1)
 
 
-def getAllExteriorPoints(polys):  # todo: hier muss nocheinmal nachgeschaut werdem ob das so passt?
+def getAllExteriorPoints(polys):
     data = []
     for poly in polys:
         e, i = m3dm.polydecomposer(poly)
@@ -393,7 +392,7 @@ def processWithApproximatedWindows(o, path, buildingid, overall_counter, tr_1):
         unique_identifier = child.xpath("@g:id", namespaces={'g': ns_gml})
         if child.tag == '{%s}Window' % ns_bldg or child.tag == '{%s}Door' % ns_bldg:
             polys = m3dm.polygonFinder(o)
-            exterior_points = getAllExteriorPoints(polys)  # Todo diese funktion muss noch neu implementiert werden?
+            exterior_points = getAllExteriorPoints(polys)
             t = compute_convex_hull(exterior_points)
             filename = path + str(overall_counter) + ".obj"
             write_obj_file(t, filename, str(child.tag), buildingid, unique_identifier, overall_counter, path, tr_1)
@@ -413,7 +412,7 @@ def separateComponents(b, b_counter, path, APPROXIMATEWINDOWS, ADDBOUNDINGBOX):
     semanticSurfaces = ['GroundSurface', 'WallSurface', 'RoofSurface', 'ClosureSurface', 'CeilingSurface',
                         'InteriorWallSurface', 'FloorSurface', 'OuterCeilingSurface', 'OuterFloorSurface', 'Door',
                         "outerBuildingInstallation",
-                        'Window', "BuildingInstallation"]
+                        'Window', "BuildingInstallation", "BuildingConstructiveElement"]
 
     for semanticSurface in semanticSurfaces:
         output[semanticSurface] = []
@@ -423,21 +422,27 @@ def separateComponents(b, b_counter, path, APPROXIMATEWINDOWS, ADDBOUNDINGBOX):
     if not buildingid:
         buildingid = b_counter
 
-    openings = []
-    openingpolygons = []
-    for child in b.getiterator():
-        if child.tag == '{%s}opening' % ns_bldg:
-            openings.append(child)
-            for o in child.findall('.//{%s}Polygon' % ns_gml):
-                openingpolygons.append(o)
+    if config.getVersion() != 3:
+        openings = []
+        openingpolygons = []
+        for child in b.getiterator():
+            if child.tag == '{%s}opening' % ns_bldg:
+                openings.append(child)
+                for o in child.findall('.//{%s}Polygon' % ns_gml):
+                    openingpolygons.append(o)
 
-    for o in openings:
-        print("approximate windows: ", APPROXIMATEWINDOWS)
-        if APPROXIMATEWINDOWS:
-            processWithApproximatedWindows(o, path, buildingid, overall_counter, tr_1)
-        if not APPROXIMATEWINDOWS:
-            processOpening(o, path, buildingid, overall_counter, tr_1)
-        overall_counter += 1
+        for o in openings:
+            print("approximate windows: ", APPROXIMATEWINDOWS)
+            if APPROXIMATEWINDOWS:
+                processWithApproximatedWindows(o, path, buildingid, overall_counter, tr_1)
+            if not APPROXIMATEWINDOWS:
+                processOpening(o, path, buildingid, overall_counter, tr_1)
+            overall_counter += 1
+
+    if config.getVersion() == 3:
+        openingpolygons = []
+        print("Component separation for CityGML 3.0 is not implemented yet.")
+        # todo: muss noch implementiert werden
 
     # -- Process other thematic boundaries
     for cl in output:

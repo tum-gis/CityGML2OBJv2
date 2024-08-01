@@ -269,7 +269,7 @@ def get2DArea(polypoints):
     return get3DArea(flatpolypoints)
 
 
-def getNormal(polypoints): #todo: REplace with an improved functionality
+def getNormal(polypoints):
     """Get the normal of the first three points of a polygon. Assumes planarity."""
     return unit_normal(polypoints[0], polypoints[1], polypoints[2])
 
