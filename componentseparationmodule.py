@@ -159,13 +159,11 @@ def perturb_points(points, perturbation_scale=1e-6):
 
 
 def write_obj_file(surfaces, filename, tag, parentid, gmlid, counter, path, tr_1):
-    # print("surfaces: ", surfaces)
     for triangle in tr_1:
         surfaces.append(triangle)
     with open(filename, 'w') as file:
         vertex_index = 1
         for triangle in surfaces:
-            # print("surface: ", triangle)
             for vertex in triangle:
                 file.write(f"v {vertex[0]} {vertex[1]} {vertex[2]}\n")
             file.write(f"f {vertex_index} {vertex_index + 1} {vertex_index + 2}\n")
@@ -348,7 +346,6 @@ def process_polygons_parallel(polys):
         if len(epoints_clean) > 4:
             poly_components = [epoints_clean, irings]
             data.append(poly_components)
-            # results.append([epoints_clean])
         if len(epoints_clean) == 4:
             results.append([epoints])
     with ThreadPoolExecutor(max_workers=32) as executor:
@@ -366,11 +363,6 @@ def processOpening(o, path, buildingid, overall_counter, tr_1):
     for child in o.getiterator():
         unique_identifier = child.xpath("@g:id", namespaces={'g': ns_gml})
         if child.tag == '{%s}Window' % ns_bldg or child.tag == '{%s}Door' % ns_bldg:
-            if child.tag == '{%s}Window' % ns_bldg:
-                bez = 'Window'  # kann vermutlich noch entfernt werden
-                # print(t)
-            else:
-                bez = 'Door'  # kann vermutlich noch entfernt werden
             polys = m3dm.polygonFinder(o)
             t = process_polygons_parallel(polys)
             triangles = []
@@ -400,10 +392,6 @@ def processWithApproximatedWindows(o, path, buildingid, overall_counter, tr_1):
     for child in o.getiterator():
         unique_identifier = child.xpath("@g:id", namespaces={'g': ns_gml})
         if child.tag == '{%s}Window' % ns_bldg or child.tag == '{%s}Door' % ns_bldg:
-            if child.tag == '{%s}Window' % ns_bldg:
-                bez = 'Window'  # kann vermutlich noch entfernt werden
-            else:
-                bez = 'Door'  # kann vermutlich noch entfernt werden
             polys = m3dm.polygonFinder(o)
             exterior_points = getAllExteriorPoints(polys)  # Todo diese funktion muss noch neu implementiert werden?
             t = compute_convex_hull(exterior_points)
@@ -412,6 +400,7 @@ def processWithApproximatedWindows(o, path, buildingid, overall_counter, tr_1):
 
 
 def separateComponents(b, b_counter, path, APPROXIMATEWINDOWS, ADDBOUNDINGBOX):
+    # Option to include the small triangles to mark the buffered bounding box
     if ADDBOUNDINGBOX:
         tr_1 = claculateBuildingBoundingVbolume(b)
     elif not ADDBOUNDINGBOX:
@@ -451,7 +440,6 @@ def separateComponents(b, b_counter, path, APPROXIMATEWINDOWS, ADDBOUNDINGBOX):
         overall_counter += 1
 
     # -- Process other thematic boundaries
-    counter = 0
     for cl in output:
         cls = []
         for child in b.getiterator():
