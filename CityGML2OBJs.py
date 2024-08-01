@@ -228,6 +228,11 @@ PARSER.add_argument('-sepC', '--separateComponents',
                     help='Save each building component into an individual file with the filename serving as an identifier.',
                     required=False)
 
+PARSER.add_argument('-appW', '--approximateWindows',
+                    help='Approximate windows by their convex hulls to save some processing time.',
+                    required=False)
+
+
 # End of changes by Th_Fr
 
 ARGS = vars(PARSER.parse_args())
@@ -314,8 +319,15 @@ elif SEPARATERCOMPONENTS == '0':
 else:
     SEPARATERCOMPONENTS = False
 
-# End of Changes by Th_Fr
+APPROXIMATEWINDOWS = ARGS['approximateWindows']
+if APPROXIMATEWINDOWS == '1':
+    APPROXIMATEWINDOWS = True
+elif APPROXIMATEWINDOWS == '0':
+    APPROXIMATEWINDOWS = False
+else:
+    APPROXIMATEWINDOWS = False
 
+# End of Changes by Th_Fr
 # -----------------------------------------------------------------
 # -- Attribute stuff
 
@@ -554,7 +566,7 @@ for f in files_found:
         for b in buildings:
             # todo: addd by th_fr
             if SEPARATERCOMPONENTS:
-                csm.separateComponents(b, b_counter, RESULT)
+                csm.separateComponents(b, b_counter, RESULT, APPROXIMATEWINDOWS)
                 # End time
                 end_time = time.time()
                 # Calculate elapsed time

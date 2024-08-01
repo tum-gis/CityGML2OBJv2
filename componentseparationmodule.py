@@ -7,6 +7,8 @@ import numpy as np
 import open3d as o3d
 import open3d.core as o3c
 import os
+from concurrent.futures import ThreadPoolExecutor
+
 
 
 def claculateBuildingBoundingVbolume(b):
@@ -329,19 +331,68 @@ def compute_convex_hull(points):
         faces.append(face)
     return faces
 
+def process_polygon(p):
+    e = p[0]
+    i = p[1]
+    t = p3dm.triangulation(e, i)
+    #print(f"t: {t}")
+    return t
+
 
 def process_polygons_parallel(polys):
     data = []
+    results = []
+
     for poly in polys:
+
         e, i = m3dm.polydecomposer(poly)
         epoints = m3dm.GMLpoints(e[0])
+
         # -- Clean recurring points, except the last one
         last_ep = epoints[-1]
         epoints_clean = list(remove_reccuring(epoints))
         epoints_clean.append(last_ep)
-        for point in epoints_clean:
-            data.append(point)
-    return data
+        #print("Len e : ", len(epoints_clean))
+        # -- LinearRing(s) forming the interior
+        irings = []
+        for iring in i:
+            ipoints = m3dm.GMLpoints(iring)
+            # -- Clean them in the same manner as the exterior ring
+            last_ip = ipoints[-1]
+            ipoints_clean = list(remove_reccuring(ipoints))
+            ipoints_clean.append(last_ip)
+            irings.append(ipoints_clean)
+            # print("irings: ", irings)
+        #if len(epoints_clean) < 4:
+        #    print("Here: ", epoints_clean)
+        if len(epoints_clean) > 4:
+            poly_components = [epoints_clean, irings]
+            data.append(poly_components)
+            #results.append([epoints_clean])
+        if len(epoints_clean) == 4:
+            #print("here")
+            results.append([epoints])
+
+    #print(f"data taype: {data}")
+    # Using ThreadPoolExecutor for parallel processing
+    with ThreadPoolExecutor(max_workers=32) as executor:
+        # Submitting all tasks
+        futures = [executor.submit(process_polygon, p) for p in data]
+
+        # Collecting results
+        for future in futures:
+
+            result = future.result()  # This will re-raise any exception caught during the execution of the task
+            results.append(result)
+            #except Exception as e:
+            #    print(f"Task generated an exception: {e}")
+    #test1 = len(polys)
+    #test2 = len(results)
+    #test3 = len(data)
+
+        #for point in epoints_clean:
+        #    data.append(point)
+    return results
 
 
 # this is an experimental method for parallelization
@@ -356,13 +407,49 @@ def processOpening(o, path, buildingid, overall_counter, tr_1):
             else:
                 bez = 'Door'
             polys = m3dm.polygonFinder(o)
-            exterior_points = process_polygons_parallel(polys)
+            t = process_polygons_parallel(polys)
+            #test4 = len(t)
+            triangles =[]
+            for poly in t:
+                for tr in poly:
+                    triangles.append(tr)
+            #print("t: ", t)
+            #t = compute_convex_hull(exterior_points)
+            filename = path + str(overall_counter) + ".obj"
+            write_obj_file(triangles, filename, str(child.tag), buildingid, unique_identifier, overall_counter, path, tr_1)
+
+
+
+def getAllExteriorPoints(polys): #todo: hier muss nocheinmal nachgeschaut werdem ob das so passt?
+    data = []
+    for poly in polys:
+        e, i = m3dm.polydecomposer(poly)
+        epoints = m3dm.GMLpoints(e[0])
+        # -- Clean recurring points, except the last one
+        last_ep = epoints[-1]
+        epoints_clean = list(remove_reccuring(epoints))
+        epoints_clean.append(last_ep)
+        for point in epoints_clean:
+            data.append(point)
+    return data
+
+def processWithApproximatedWindows(o, path, buildingid, overall_counter, tr_1):
+    for child in o.getiterator():
+        unique_identifier = child.xpath("@g:id", namespaces={'g': ns_gml})
+        if child.tag == '{%s}Window' % ns_bldg or child.tag == '{%s}Door' % ns_bldg:
+            # print(unique_identifier)
+            if child.tag == '{%s}Window' % ns_bldg:
+                bez = 'Window'
+                # print(t)
+            else:
+                bez = 'Door'
+            polys = m3dm.polygonFinder(o)
+            exterior_points = getAllExteriorPoints(polys) #Todo diese funktion muss noch neu implementiert werden?
             t = compute_convex_hull(exterior_points)
             filename = path + str(overall_counter) + ".obj"
             write_obj_file(t, filename, str(child.tag), buildingid, unique_identifier, overall_counter, path, tr_1)
 
-
-def separateComponents(b, b_counter, path):
+def separateComponents(b, b_counter, path, APPROXIMATEWINDOWS):
     tr_1 = claculateBuildingBoundingVbolume(b)
     global overall_counter
     overall_counter = 0
@@ -370,8 +457,8 @@ def separateComponents(b, b_counter, path):
     specifyVersion()
     # comprehensive list of semantic surfaces
     semanticSurfaces = ['GroundSurface', 'WallSurface', 'RoofSurface', 'ClosureSurface', 'CeilingSurface',
-                        'InteriorWallSurface', 'FloorSurface', 'OuterCeilingSurface', 'OuterFloorSurface', 'Door',
-                        'Window']
+                        'InteriorWallSurface', 'FloorSurface', 'OuterCeilingSurface', 'OuterFloorSurface', 'Door', "outerBuildingInstallation",
+                        'Window',"BuildingInstallation"]
 
     for semanticSurface in semanticSurfaces:
         output[semanticSurface] = []
@@ -390,7 +477,12 @@ def separateComponents(b, b_counter, path):
                 openingpolygons.append(o)
 
     for o in openings:
-        processOpening(o, path, buildingid, overall_counter, tr_1)
+        print("approximate windows: ", APPROXIMATEWINDOWS)
+        if APPROXIMATEWINDOWS:
+            processWithApproximatedWindows(o, path, buildingid, overall_counter, tr_1)
+            #print("here")
+        if not APPROXIMATEWINDOWS :
+            processOpening(o, path, buildingid, overall_counter, tr_1)
         overall_counter += 1
 
     # -- Process other thematic boundaries
@@ -405,7 +497,7 @@ def separateComponents(b, b_counter, path):
             # -- If it is the first feature, print the object identifier
             unique_identifier = feature.xpath("@g:id", namespaces={
                 'g': ns_gml})
-            if str(unique_identifier) != "[]":
+            if str(unique_identifier) != "[]" or str(unique_identifier) == "[]":
                 cleaned_filename = str(unique_identifier)
                 # -- This is not supposed to happen, but just to be sure...
                 if feature.tag == '{%s}Window' % ns_bldg or feature.tag == '{%s}Door' % ns_bldg:
@@ -416,7 +508,6 @@ def separateComponents(b, b_counter, path):
                 poly_t = []
                 t_ges = []
                 for p in feature.findall('.//{%s}Polygon' % ns_gml):
-
                     found_opening = False
                     for optest in openingpolygons:
                         if p == optest:

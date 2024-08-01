@@ -548,9 +548,6 @@ def normalize(vector):
     return vector / norm
 
 
-
-
-
 def triangulation(e, i):
     """Triangulate the polygon with the exterior and interior list of points. Works only for convex polygons.
     Assumes planarity. Projects to a 2D plane and goes back to 3D."""
@@ -670,13 +667,20 @@ def triangulation(e, i):
             t = triangle.triangulate(poly, 'pQjz')
         else:
             t = triangle.triangulate(poly)
+
     else:
         poly = {'vertices': np.array(newpolypoints), 'segments': np.array(segments), 'holes': np.array(newholes)}
         t = triangle.triangulate(poly, 'pQjz')
+
     # End of changes by Th_Fr
 
     # -- Get the triangles and their vertices
-    tris = t['triangles']
+    try:
+        tris = t['triangles']
+    except:
+        print("strange error")
+        tris = []
+
     vert = t['vertices'].tolist()
     # -- Store the vertices of each triangle in a list
     tri_points = []
