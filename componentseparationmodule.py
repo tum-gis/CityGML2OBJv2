@@ -342,17 +342,13 @@ def process_polygon(p):
 def process_polygons_parallel(polys):
     data = []
     results = []
-
     for poly in polys:
-
         e, i = m3dm.polydecomposer(poly)
         epoints = m3dm.GMLpoints(e[0])
-
         # -- Clean recurring points, except the last one
         last_ep = epoints[-1]
         epoints_clean = list(remove_reccuring(epoints))
         epoints_clean.append(last_ep)
-        #print("Len e : ", len(epoints_clean))
         # -- LinearRing(s) forming the interior
         irings = []
         for iring in i:
@@ -362,36 +358,19 @@ def process_polygons_parallel(polys):
             ipoints_clean = list(remove_reccuring(ipoints))
             ipoints_clean.append(last_ip)
             irings.append(ipoints_clean)
-            # print("irings: ", irings)
-        #if len(epoints_clean) < 4:
-        #    print("Here: ", epoints_clean)
         if len(epoints_clean) > 4:
             poly_components = [epoints_clean, irings]
             data.append(poly_components)
             #results.append([epoints_clean])
         if len(epoints_clean) == 4:
-            #print("here")
             results.append([epoints])
-
-    #print(f"data taype: {data}")
-    # Using ThreadPoolExecutor for parallel processing
     with ThreadPoolExecutor(max_workers=32) as executor:
         # Submitting all tasks
         futures = [executor.submit(process_polygon, p) for p in data]
-
         # Collecting results
         for future in futures:
-
             result = future.result()  # This will re-raise any exception caught during the execution of the task
             results.append(result)
-            #except Exception as e:
-            #    print(f"Task generated an exception: {e}")
-    #test1 = len(polys)
-    #test2 = len(results)
-    #test3 = len(data)
-
-        #for point in epoints_clean:
-        #    data.append(point)
     return results
 
 
@@ -400,21 +379,17 @@ def processOpening(o, path, buildingid, overall_counter, tr_1):
     for child in o.getiterator():
         unique_identifier = child.xpath("@g:id", namespaces={'g': ns_gml})
         if child.tag == '{%s}Window' % ns_bldg or child.tag == '{%s}Door' % ns_bldg:
-            # print(unique_identifier)
             if child.tag == '{%s}Window' % ns_bldg:
-                bez = 'Window'
+                bez = 'Window' # kann vermutlich noch entfernt werden
                 # print(t)
             else:
-                bez = 'Door'
+                bez = 'Door' # kann vermutlich noch entfernt werden
             polys = m3dm.polygonFinder(o)
             t = process_polygons_parallel(polys)
-            #test4 = len(t)
             triangles =[]
             for poly in t:
                 for tr in poly:
                     triangles.append(tr)
-            #print("t: ", t)
-            #t = compute_convex_hull(exterior_points)
             filename = path + str(overall_counter) + ".obj"
             write_obj_file(triangles, filename, str(child.tag), buildingid, unique_identifier, overall_counter, path, tr_1)
 
@@ -437,12 +412,10 @@ def processWithApproximatedWindows(o, path, buildingid, overall_counter, tr_1):
     for child in o.getiterator():
         unique_identifier = child.xpath("@g:id", namespaces={'g': ns_gml})
         if child.tag == '{%s}Window' % ns_bldg or child.tag == '{%s}Door' % ns_bldg:
-            # print(unique_identifier)
             if child.tag == '{%s}Window' % ns_bldg:
-                bez = 'Window'
-                # print(t)
+                bez = 'Window' # kann vermutlich noch entfernt werden
             else:
-                bez = 'Door'
+                bez = 'Door' # kann vermutlich noch entfernt werden
             polys = m3dm.polygonFinder(o)
             exterior_points = getAllExteriorPoints(polys) #Todo diese funktion muss noch neu implementiert werden?
             t = compute_convex_hull(exterior_points)
@@ -480,7 +453,6 @@ def separateComponents(b, b_counter, path, APPROXIMATEWINDOWS):
         print("approximate windows: ", APPROXIMATEWINDOWS)
         if APPROXIMATEWINDOWS:
             processWithApproximatedWindows(o, path, buildingid, overall_counter, tr_1)
-            #print("here")
         if not APPROXIMATEWINDOWS :
             processOpening(o, path, buildingid, overall_counter, tr_1)
         overall_counter += 1
