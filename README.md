@@ -26,6 +26,9 @@ and Bob's your uncle! :construction_worker:
 | Translation of the CityGML dataset into a local coordinate system before further processing, without saving the translation parameters|`-tC 1`|
 | Translation of the CityGML dataset into a local coordinate system before further processing, with saving the translation parameters to a designated .txt file|`-tCw 1`|
 | Separation of every building component into an individual file. Works only for uilding-wise processing. The building's axis aligned bounding box (bufferd by 2m) is marked by 8 small triangles in all resulting files.|`-sepC 1`|
+| Addition of 8 small triangles that delimit the the buffered (8) bounding box of an entire building to every component file. This option only works along with the component separation functionality.| `-adBB 1` |
+| Approximation of intricate window geometriesby their convex hull. This option only works along with the component separation functionality. | `-appW 1` |
+
 
 
 ## :page_with_curl: Requirements
