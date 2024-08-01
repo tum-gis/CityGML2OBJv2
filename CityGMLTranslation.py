@@ -214,10 +214,7 @@ def splitAndApplyTrafo(coordString, transParam):
     length = int(len(split))
     length_new = int(length / 3)
     for i in range(length_new):
-        # split[counter] = (Decimal(split[counter])) + transParam[1]
-        # split[counter + 1] = (Decimal(split[counter + 1])) + transParam[0]
-        # split[counter + 2] = (Decimal(split[counter + 2])) - transParam[2]
-        #
+
 
         # print("y")
         split[counter] = performStableAddition(split[counter], str(transParam[1]))
