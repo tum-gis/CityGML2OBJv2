@@ -204,7 +204,12 @@ def getTranslationParameters(envelopes, ns_gml):
 def splitAndApplyTrafo(coordString, transParam):
     # Splitting the coordinate string by empty spaces
     split = coordString.split(" ")
+    alalala = len(split)
     # Apply the Trafo
+    if split[0] == '':
+        split.pop(0)
+    if split[-1] == "":
+        split.pop(-1)
     counter = 0
     length = int(len(split))
     length_new = int(length / 3)
@@ -252,7 +257,8 @@ def appyTranslationToCityGML(CITYGML, root, transParam, ns_citygml, ns_gml, ns_f
                     for e in exter:
                         # find all the coordinates that are stored as a "posList"
                         if len(e.findall('.//{%s}posList' % ns_gml)) > 0:
-                            points = e.findall('.//{%s}posList' % ns_gml)[0].text
+                            points_tmp = e.findall('.//{%s}posList' % ns_gml)[0].text
+                            points = points_tmp.replace('\n', ' ')
                             translated = splitAndApplyTrafo(points, transParam)
                             # print("Before: ", e.findall('.//{%s}posList' % ns_gml)[0].text)
                             e.findall('.//{%s}posList' % ns_gml)[0].text = translated
@@ -269,7 +275,8 @@ def appyTranslationToCityGML(CITYGML, root, transParam, ns_citygml, ns_gml, ns_f
                     for i in inter:
                         # find all the coordinates that are stored as a "posList"
                         if len(i.findall('.//{%s}posList' % ns_gml)) > 0:
-                            points = i.findall('.//{%s}posList' % ns_gml)[0].text
+                            points_tmp = i.findall('.//{%s}posList' % ns_gml)[0].text
+                            points = points_tmp.replace('\n', ' ')
                             translated = splitAndApplyTrafo(points, transParam)
                             i.findall('.//{%s}posList' % ns_gml)[0].text = translated
                         # find all the coordinates that are stored as "pos"
@@ -285,7 +292,8 @@ def appyTranslationToCityGML(CITYGML, root, transParam, ns_citygml, ns_gml, ns_f
                 # Step 1: find all the reference points:
                 referencePoints = child.findall('.//{%s}referencePoint' % ns_citygml)
                 for referencePoint in referencePoints:
-                    points = referencePoint.findall('.//{%s}pos' % ns_gml)
+                    points_tmp = referencePoint.findall('.//{%s}pos' % ns_gml)
+                    points = points_tmp.replace('\n', ' ')
                     counter = 0
                     for l in points:
                         translated = splitAndApplyTrafo(l.text, transParam)
