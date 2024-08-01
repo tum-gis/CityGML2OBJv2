@@ -10,19 +10,17 @@ import os
 from concurrent.futures import ThreadPoolExecutor
 
 
-
 def claculateBuildingBoundingVbolume(b):
     # Schritt 1: identifying all wallsurfaces and roof surfaces of the building
     output = {}
     specifyVersion()
     # comprehensive list of semantic surfaces
-    semanticSurfaces = ['GroundSurface', 'WallSurface', 'RoofSurface', 'ClosureSurface', 'CeilingSurface',]
+    semanticSurfaces = ['GroundSurface', 'WallSurface', 'RoofSurface', 'ClosureSurface', 'CeilingSurface', ]
 
     for semanticSurface in semanticSurfaces:
         output[semanticSurface] = []
     data = []
     for cl in output:
-
         cls = []
         for child in b.getiterator():
             if child.tag == '{%s}%s' % (ns_bldg, cl):
@@ -38,26 +36,19 @@ def claculateBuildingBoundingVbolume(b):
                 epoints_clean.append(last_ep)
                 for point in epoints_clean:
                     data.append(point)
-    #print(data)
-
 
     # Schritt 2: Idetify the Bounding volume
     # 2.1 creating an open3d pointcloud from all the idetified vertex points
     pcd = o3d.t.geometry.PointCloud(o3c.Tensor(data, o3c.float32))
     # 2.2 obtain the axis aligned boundign box of the point cloud
     axis_aligned_bb = pcd.get_axis_aligned_bounding_box()
-    #print(axis_aligned_bb)
     # Schritt 3: Construct small triangles that describe the boundign box sufficienly
     box_points = axis_aligned_bb.get_box_points().numpy().tolist()
-    print(box_points)# todo: hier muss noch der richtige punknt gefunder werden
-
     # Convert the list to a numpy array for easier manipulation
     box_points = np.array(box_points)
-
     # Calculate the min and max coordinates
     min_x, min_y, min_z = np.min(box_points, axis=0)
     max_x, max_y, max_z = np.max(box_points, axis=0)
-
     # Add a 3m buffer
     buffer = 3
     min_x -= buffer
@@ -66,7 +57,6 @@ def claculateBuildingBoundingVbolume(b):
     max_x += buffer
     max_y += buffer
     max_z += buffer
-
     # Define the buffered bounding box points
     buffered_box_points = np.array([
         [min_x, min_y, min_z],
@@ -108,15 +98,13 @@ def claculateBuildingBoundingVbolume(b):
     # Convert the triangles to lists
     corner_triangles = [np.array(triangle).tolist() for triangle in corner_triangles]
 
-    # Print the results
-    print("Buffered Bounding Box Points:")
-    print(buffered_box_points.tolist())
-
     print("\nCorner Triangles:")
     for i, triangle in enumerate(corner_triangles):
         print(f"Triangle {i + 1}: {triangle}")
 
     return corner_triangles
+
+
 # diese funktion dient dazu ein JSON file zu schreiben um die meta informationen über die einzelnen objekte zuspeichern
 def add_identifier_to_json(number, tag, parentID, gmlID, json_file_path):
     """
@@ -171,7 +159,7 @@ def perturb_points(points, perturbation_scale=1e-6):
 
 
 def write_obj_file(surfaces, filename, tag, parentid, gmlid, counter, path, tr_1):
-    #print("surfaces: ", surfaces)
+    # print("surfaces: ", surfaces)
     for triangle in tr_1:
         surfaces.append(triangle)
     with open(filename, 'w') as file:
@@ -200,10 +188,8 @@ def remove_reccuring(list_vertices):
 def separate_string(s):
     # Define the regex pattern
     pattern = r'\{([^}]*)\}(.*)'
-
     # Search for the pattern in the input string
     match = re.search(pattern, s)
-
     if match:
         # Extract the parts
         inside_braces = match.group(1)
@@ -237,7 +223,6 @@ def specifyVersion():
     global ns_wtr
     global nsmap
 
-    # print("config.getVerision", config.getVersion())
     if config.getVersion() == 1:
         # -- Name spaces for CityGML 2.0
         ns_citygml = "http://www.opengis.net/citygml/1.0"
@@ -299,6 +284,7 @@ def specifyVersion():
         'dem': ns_dem
     }
 
+
 def compute_convex_hull(points):
     """
     Computes the convex hull of a set of 3D points using Open3D, including triangulation of the hull's faces.
@@ -331,11 +317,12 @@ def compute_convex_hull(points):
         faces.append(face)
     return faces
 
+
 def process_polygon(p):
     e = p[0]
     i = p[1]
     t = p3dm.triangulation(e, i)
-    #print(f"t: {t}")
+    # print(f"t: {t}")
     return t
 
 
@@ -361,7 +348,7 @@ def process_polygons_parallel(polys):
         if len(epoints_clean) > 4:
             poly_components = [epoints_clean, irings]
             data.append(poly_components)
-            #results.append([epoints_clean])
+            # results.append([epoints_clean])
         if len(epoints_clean) == 4:
             results.append([epoints])
     with ThreadPoolExecutor(max_workers=32) as executor:
@@ -380,22 +367,22 @@ def processOpening(o, path, buildingid, overall_counter, tr_1):
         unique_identifier = child.xpath("@g:id", namespaces={'g': ns_gml})
         if child.tag == '{%s}Window' % ns_bldg or child.tag == '{%s}Door' % ns_bldg:
             if child.tag == '{%s}Window' % ns_bldg:
-                bez = 'Window' # kann vermutlich noch entfernt werden
+                bez = 'Window'  # kann vermutlich noch entfernt werden
                 # print(t)
             else:
-                bez = 'Door' # kann vermutlich noch entfernt werden
+                bez = 'Door'  # kann vermutlich noch entfernt werden
             polys = m3dm.polygonFinder(o)
             t = process_polygons_parallel(polys)
-            triangles =[]
+            triangles = []
             for poly in t:
                 for tr in poly:
                     triangles.append(tr)
             filename = path + str(overall_counter) + ".obj"
-            write_obj_file(triangles, filename, str(child.tag), buildingid, unique_identifier, overall_counter, path, tr_1)
+            write_obj_file(triangles, filename, str(child.tag), buildingid, unique_identifier, overall_counter, path,
+                           tr_1)
 
 
-
-def getAllExteriorPoints(polys): #todo: hier muss nocheinmal nachgeschaut werdem ob das so passt?
+def getAllExteriorPoints(polys):  # todo: hier muss nocheinmal nachgeschaut werdem ob das so passt?
     data = []
     for poly in polys:
         e, i = m3dm.polydecomposer(poly)
@@ -408,30 +395,36 @@ def getAllExteriorPoints(polys): #todo: hier muss nocheinmal nachgeschaut werdem
             data.append(point)
     return data
 
+
 def processWithApproximatedWindows(o, path, buildingid, overall_counter, tr_1):
     for child in o.getiterator():
         unique_identifier = child.xpath("@g:id", namespaces={'g': ns_gml})
         if child.tag == '{%s}Window' % ns_bldg or child.tag == '{%s}Door' % ns_bldg:
             if child.tag == '{%s}Window' % ns_bldg:
-                bez = 'Window' # kann vermutlich noch entfernt werden
+                bez = 'Window'  # kann vermutlich noch entfernt werden
             else:
-                bez = 'Door' # kann vermutlich noch entfernt werden
+                bez = 'Door'  # kann vermutlich noch entfernt werden
             polys = m3dm.polygonFinder(o)
-            exterior_points = getAllExteriorPoints(polys) #Todo diese funktion muss noch neu implementiert werden?
+            exterior_points = getAllExteriorPoints(polys)  # Todo diese funktion muss noch neu implementiert werden?
             t = compute_convex_hull(exterior_points)
             filename = path + str(overall_counter) + ".obj"
             write_obj_file(t, filename, str(child.tag), buildingid, unique_identifier, overall_counter, path, tr_1)
 
-def separateComponents(b, b_counter, path, APPROXIMATEWINDOWS):
-    tr_1 = claculateBuildingBoundingVbolume(b)
+
+def separateComponents(b, b_counter, path, APPROXIMATEWINDOWS, ADDBOUNDINGBOX):
+    if ADDBOUNDINGBOX:
+        tr_1 = claculateBuildingBoundingVbolume(b)
+    elif not ADDBOUNDINGBOX:
+        tr_1 = []
     global overall_counter
     overall_counter = 0
     output = {}
     specifyVersion()
     # comprehensive list of semantic surfaces
     semanticSurfaces = ['GroundSurface', 'WallSurface', 'RoofSurface', 'ClosureSurface', 'CeilingSurface',
-                        'InteriorWallSurface', 'FloorSurface', 'OuterCeilingSurface', 'OuterFloorSurface', 'Door', "outerBuildingInstallation",
-                        'Window',"BuildingInstallation"]
+                        'InteriorWallSurface', 'FloorSurface', 'OuterCeilingSurface', 'OuterFloorSurface', 'Door',
+                        "outerBuildingInstallation",
+                        'Window', "BuildingInstallation"]
 
     for semanticSurface in semanticSurfaces:
         output[semanticSurface] = []
@@ -453,7 +446,7 @@ def separateComponents(b, b_counter, path, APPROXIMATEWINDOWS):
         print("approximate windows: ", APPROXIMATEWINDOWS)
         if APPROXIMATEWINDOWS:
             processWithApproximatedWindows(o, path, buildingid, overall_counter, tr_1)
-        if not APPROXIMATEWINDOWS :
+        if not APPROXIMATEWINDOWS:
             processOpening(o, path, buildingid, overall_counter, tr_1)
         overall_counter += 1
 
@@ -518,7 +511,8 @@ def separateComponents(b, b_counter, path, APPROXIMATEWINDOWS):
                             t_ges = t_ges + surfaces
 
                 filename = path + str(overall_counter) + ".obj"
-                write_obj_file(t_ges, filename, str(feature.tag), buildingid, cleaned_filename, overall_counter, path, tr_1)
+                write_obj_file(t_ges, filename, str(feature.tag), buildingid, cleaned_filename, overall_counter, path,
+                               tr_1)
                 overall_counter += 1
 
     print("Segmentation finished!")

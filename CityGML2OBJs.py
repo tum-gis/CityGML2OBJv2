@@ -232,6 +232,10 @@ PARSER.add_argument('-appW', '--approximateWindows',
                     help='Approximate windows by their convex hulls to save some processing time.',
                     required=False)
 
+PARSER.add_argument('-addBB', '--addBoundingBox',
+                    help='Add small triangles defining the bounding box to each of the components.',
+                    required=False)
+
 
 # End of changes by Th_Fr
 
@@ -327,6 +331,15 @@ elif APPROXIMATEWINDOWS == '0':
 else:
     APPROXIMATEWINDOWS = False
 
+
+ADDBOUNDINGBOX = ARGS['addBoundingBox']
+if ADDBOUNDINGBOX == '1':
+    ADDBOUNDINGBOX = True
+elif ADDBOUNDINGBOX == '0':
+    ADDBOUNDINGBOX = False
+else:
+    ADDBOUNDINGBOX = False
+
 # End of Changes by Th_Fr
 # -----------------------------------------------------------------
 # -- Attribute stuff
@@ -348,7 +361,6 @@ elif ATTRIBUTE == 3:
 # -- Statistic parameter
 atts = []
 
-
 # -- Colouring function
 def mtl(att, min_value, max_value, res):
     """Finds the corresponding material."""
@@ -361,7 +373,6 @@ def mtl(att, min_value, max_value, res):
     # -- Get the material
     assigned_material = min(ar, key=lambda x: abs(x - v))
     return str(assigned_material)
-
 
 # -----------------------------------------------------------------
 # Start time
@@ -566,7 +577,7 @@ for f in files_found:
         for b in buildings:
             # todo: addd by th_fr
             if SEPARATERCOMPONENTS:
-                csm.separateComponents(b, b_counter, RESULT, APPROXIMATEWINDOWS)
+                csm.separateComponents(b, b_counter, RESULT, APPROXIMATEWINDOWS, ADDBOUNDINGBOX)
                 # End time
                 end_time = time.time()
                 # Calculate elapsed time
