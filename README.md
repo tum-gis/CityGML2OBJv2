@@ -56,6 +56,7 @@ and Bob's your uncle! :construction_worker:
 #### Mandatory:
 
 + CityGML 1.0 or 2.0
++ CityGML 3.0 shound in principal work,it is however not thoroughly tested.
 + Files must end with `.gml`, `.GML`, `.xml`, or `.XML`
 + Vertices in either `<gml:posList>` or `<gml:pos>`
 + Your files must be valid (e.g., free check with [CityDoctor](https://transfer.hft-stuttgart.de/gitlab/citydoctor/citydoctor2)
