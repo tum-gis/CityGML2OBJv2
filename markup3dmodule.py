@@ -65,7 +65,6 @@ def specifyVersion():
         ns_dem = "http://www.opengis.net/citygml/relief/2.0"
     elif config.getVersion() == 3:
         # -- Name spaces for CityGML 3.0
-        print("here")
         ns_citygml = "http://www.opengis.net/citygml/3.0"
         ns_con = "http://www.opengis.net/citygml/construction/3.0"
         ns_xlink = "http://www.w3.org/1999/xlink"
