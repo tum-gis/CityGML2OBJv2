@@ -19,6 +19,7 @@ def addCRSToJSON(root, json_file_path):
 
     # Extracting the srsName attribute from each Envelope
     srs_names = [envelope.get('srsName') for envelope in envelopes]
+    srs_Dimensions = [envelope.get('srsDimension') for envelope in envelopes]
 
     used_srs = srs_names[0]
     # Prüfen, ob die JSON-Datei existiert und laden
@@ -29,7 +30,10 @@ def addCRSToJSON(root, json_file_path):
         crs_info = {}
 
         # Neuen Identifier hinzufügen
-    crs_info["srsName"] = used_srs
+    crs_info["CRS"] = {
+        "srsName" : used_srs,
+        "srsDimensions" : srs_Dimensions
+    }
 
     # Zuordnungen in JSON-Datei schreiben
     with open(json_file_path, 'w') as json_file:
@@ -374,7 +378,10 @@ def process_polygons_parallel(polys):
             data.append(poly_components)
         if len(epoints_clean) == 4:
             results.append([epoints])
-    with ThreadPoolExecutor(max_workers=32) as executor:
+
+    cpu_cores = os.cpu_count()
+    print(f'Number of available CPU cores (using os): {cpu_cores}')
+    with ThreadPoolExecutor(max_workers=cpu_cores) as executor:
         # Submitting all tasks
         futures = [executor.submit(process_polygon, p) for p in data]
         # Collecting results
@@ -459,7 +466,7 @@ def separateComponents(b, b_counter, path, APPROXIMATEWINDOWS, ADDBOUNDINGBOX):
                     openingpolygons.append(o)
 
         for o in openings:
-            print("approximate windows: ", APPROXIMATEWINDOWS)
+            #print("approximate windows: ", APPROXIMATEWINDOWS)
             if APPROXIMATEWINDOWS:
                 processWithApproximatedWindows(o, path, buildingid, overall_counter, tr_1)
             if not APPROXIMATEWINDOWS:

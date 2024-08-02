@@ -585,7 +585,7 @@ for f in files_found:
                 # Calculate elapsed time
                 elapsed_time = end_time - start_time
                 print(f"Elapsed time: {elapsed_time:.2f} seconds")
-                break
+                continue
 
             # -- Build the local list of vertices to speed up the indexing
             local_vertices = {}
