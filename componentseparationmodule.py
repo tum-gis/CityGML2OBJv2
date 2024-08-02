@@ -9,6 +9,33 @@ import open3d.core as o3c
 import os
 from concurrent.futures import ThreadPoolExecutor
 
+# This function is used to add information about the used spatial reference system to the json file
+def addCRSToJSON(root, json_file_path):
+    specifyVersion()
+    # obtain the envelope object
+    envelopes = []
+    for envelope in root.getiterator('{%s}Envelope' % ns_gml):
+        envelopes.append(envelope)
+
+    # Extracting the srsName attribute from each Envelope
+    srs_names = [envelope.get('srsName') for envelope in envelopes]
+
+    used_srs = srs_names[0]
+    # Prüfen, ob die JSON-Datei existiert und laden
+    if os.path.exists(json_file_path):
+        with open(json_file_path, 'r') as json_file:
+            crs_info = json.load(json_file)
+    else:
+        crs_info = {}
+
+        # Neuen Identifier hinzufügen
+    crs_info["srsName"] = used_srs
+
+    # Zuordnungen in JSON-Datei schreiben
+    with open(json_file_path, 'w') as json_file:
+        json.dump(crs_info, json_file, indent=4)
+
+    return 0
 
 def claculateBuildingBoundingVbolume(b):
     # Schritt 1: identifying all wallsurfaces and roof surfaces of the building

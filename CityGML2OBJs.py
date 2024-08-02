@@ -577,6 +577,8 @@ for f in files_found:
         for b in buildings:
             # todo: addd by th_fr
             if SEPARATERCOMPONENTS:
+                json_filepath = RESULT + "index.json"
+                csm.addCRSToJSON(root, json_filepath)
                 csm.separateComponents(b, b_counter, RESULT, APPROXIMATEWINDOWS, ADDBOUNDINGBOX)
                 # End time
                 end_time = time.time()
