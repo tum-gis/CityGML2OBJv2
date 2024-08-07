@@ -236,6 +236,13 @@ PARSER.add_argument('-addBB', '--addBoundingBox',
                     help='Add small triangles defining the bounding box to each of the components.',
                     required=False)
 
+PARSER.add_argument('-addBBJSON', '--addBoundingBoxJSON',
+                    help='The bounding box of the building is additionally saved in a designated json-file',
+                    required=False)
+
+PARSER.add_argument('-tbw', '--translateBuildingWise', # todo: implementation yet to be completed
+                    help='Translate into a local coordinate system building-wise.',
+                    required=False)
 
 # End of changes by Th_Fr
 
@@ -331,7 +338,6 @@ elif APPROXIMATEWINDOWS == '0':
 else:
     APPROXIMATEWINDOWS = False
 
-
 ADDBOUNDINGBOX = ARGS['addBoundingBox']
 if ADDBOUNDINGBOX == '1':
     ADDBOUNDINGBOX = True
@@ -339,6 +345,22 @@ elif ADDBOUNDINGBOX == '0':
     ADDBOUNDINGBOX = False
 else:
     ADDBOUNDINGBOX = False
+
+ADDBOUNDINGBOXJSON = ARGS['addBoundingBoxJSON']
+if ADDBOUNDINGBOXJSON == '1':
+    ADDBOUNDINGBOXJSON = True
+elif ADDBOUNDINGBOXJSON == '0':
+    ADDBOUNDINGBOXJSON = False
+else:
+    ADDBOUNDINGBOXJSON = False
+
+TRANSLATEBUILDINGS = ARGS['translateBuildingWise']  # todo: muss noch implementiert werden
+if TRANSLATEBUILDINGS == '1':
+    TRANSLATEBUILDINGS = True
+elif TRANSLATEBUILDINGS == '0':
+    TRANSLATEBUILDINGS = False
+else:
+    TRANSLATEBUILDINGS = False
 
 # End of Changes by Th_Fr
 # -----------------------------------------------------------------
@@ -361,6 +383,7 @@ elif ATTRIBUTE == 3:
 # -- Statistic parameter
 atts = []
 
+
 # -- Colouring function
 def mtl(att, min_value, max_value, res):
     """Finds the corresponding material."""
@@ -373,6 +396,7 @@ def mtl(att, min_value, max_value, res):
     # -- Get the material
     assigned_material = min(ar, key=lambda x: abs(x - v))
     return str(assigned_material)
+
 
 # -----------------------------------------------------------------
 # Start time
@@ -573,18 +597,20 @@ for f in files_found:
         print(" There are ", b_total, " buildings in the dataset")
 
         # -- Do each building separately
-
         for b in buildings:
-            # todo: addd by th_fr
+            # addd by th_fr
             if SEPARATERCOMPONENTS:
                 json_filepath = RESULT + "index.json"
                 csm.addCRSToJSON(root, json_filepath)
-                csm.separateComponents(b, b_counter, RESULT, APPROXIMATEWINDOWS, ADDBOUNDINGBOX)
+                csm.separateComponents(b, RESULT, APPROXIMATEWINDOWS=APPROXIMATEWINDOWS,
+                                       ADDBOUNDINGBOX=ADDBOUNDINGBOX, ADDBOUNDINGBOXJSON=ADDBOUNDINGBOXJSON,
+                                       TRANSLATEBUILDINGS=TRANSLATEBUILDINGS, b_counter=b_counter)
                 # End time
                 end_time = time.time()
                 # Calculate elapsed time
                 elapsed_time = end_time - start_time
                 print(f"Elapsed time: {elapsed_time:.2f} seconds")
+                b_counter += 1
                 continue
 
             # -- Build the local list of vertices to speed up the indexing
@@ -653,13 +679,13 @@ for f in files_found:
                     for child in o.getiterator():
                         unique_identifier = child.xpath("@g:id", namespaces={'g': ns_gml})
                         if child.tag == '{%s}Window' % ns_bldg or child.tag == '{%s}Door' % ns_bldg:
-                            #print(unique_identifier)
+                            # print(unique_identifier)
                             if child.tag == '{%s}Window' % ns_bldg:
                                 t = 'Window'
-                                #print(t)
+                                # print(t)
                             else:
                                 t = 'Door'
-                                #print(t)
+                                # print(t)
                             polys = markup3dmodule.polygonFinder(o)
                             for poly in polys:
                                 poly_to_obj(poly, t)
@@ -684,7 +710,7 @@ for f in files_found:
                         if feature.tag == '{%s}Window' % ns_bldg or feature.tag == '{%s}Door' % ns_bldg:
                             continue
 
-                        #print(f"unigue identifier: {str(ob) + str(unique_identifier)}")
+                        # print(f"unigue identifier: {str(ob) + str(unique_identifier)}")
 
                         # -- Find all polygons in this semantic boundary hierarchy
 

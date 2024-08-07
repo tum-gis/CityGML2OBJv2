@@ -649,7 +649,7 @@ def triangulation(e, i):
             counter = counter + 1
             h = h.pop(-1)
 
-    # -- Plane information (assumes planarity) #todo: hier muss noch etwas angepasst werden
+    # -- Plane information (assumes planarity) #todo: hier muss noch etwas angepasst werden; erledigt?
     a = e[0]
     b = e[1]
     c = e[2]
@@ -681,7 +681,10 @@ def triangulation(e, i):
         print("strange error")
         tris = []
 
-    vert = t['vertices'].tolist()
+    try:
+        vert = t['vertices'].tolist()
+    except:
+        vert = []
     # -- Store the vertices of each triangle in a list
     tri_points = []
     for tri in tris:
