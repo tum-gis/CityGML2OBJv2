@@ -18,8 +18,10 @@ def addTranslationParameters(e, i, trans_param):
     # case distinction for empty translation parameters
     if trans_param !=  []:
         # Subtract the translation parameters from each point
-        e_translated = e - trans_param
-
+        if len(e) > 0:
+            e_translated = e - trans_param
+        elif len(e) == 0:
+            e_translated = np.asarray([])
         # Iterate over all the different interior rings
         if len(i) > 0:
             for interior_ring in i:
@@ -108,6 +110,11 @@ def obtainSRSInfo(root):
 
 # This function is used to create a corresponding json file defining the bbox of an object for each corresponding obj file
 def writeBBOXJSON(b, overall_counter, path, b_counter, trans_param):
+    translation_parameters = {
+        "d_x": str(trans_param[0]),
+        "d_y": str(trans_param[1]),
+        "d_z": str(trans_param[2])
+    }
 
     buffered_box_points_global = getBufferedBBoxPoints(b)
 
@@ -127,18 +134,23 @@ def writeBBOXJSON(b, overall_counter, path, b_counter, trans_param):
         with open(json_file_path, 'r') as json_file:
             axis_aligned_bbox = json.load(json_file)
 
+
     else:
         axis_aligned_bbox = {}
 
-        # Neuen Identifier hinzufügen
+
+    # Neuen Identifier hinzufügen
     axis_aligned_bbox["axis_aligned_bbox"] = {
         "min_point": str(min_point),
-        "max point": str(max_point)
+        "max_point": str(max_point),
+        "translation_parameters" : translation_parameters
+
     }
 
     # Zuordnungen in JSON-Datei schreiben
     with open(json_file_path, 'w') as json_file:
         json.dump(axis_aligned_bbox, json_file, indent=4)
+
 
     return 0
 
@@ -178,10 +190,10 @@ def addCRSToJSON(root, json_file_path):
 
 def claculateBuildingBoundingVbolume(b, trans_param):
 
-    buffered_box_points_global = getBufferedBBoxPoints(b)
+    buffered_box_points = getBufferedBBoxPoints(b)
 
     # Translate the Bounding box into the local coordinate system
-    buffered_box_points, _ = addTranslationParameters(buffered_box_points_global, [], trans_param=trans_param)
+    #buffered_box_points, _ = addTranslationParameters(buffered_box_points_global, [], trans_param=trans_param)
 
     # Function to create triangles at each corner in 3D
     def create_corner_triangles(box_points, triangle_size=1):
@@ -271,9 +283,10 @@ def perturb_points(points, perturbation_scale=1e-6):
     return perturbed_points.tolist()
 
 
-def write_obj_file(surfaces, filename, tag, parentid, gmlid, counter, path, tr_1):
+def write_obj_file(surfaces, filename, tag, parentid, gmlid, counter, path, tr_1, translation_parameters):
     for triangle in tr_1:
-        surfaces.append(triangle)
+        triangle_local, _ = addTranslationParameters(triangle, [], trans_param=translation_parameters)
+        surfaces.append(triangle_local)
     with open(filename, 'w') as file:
         vertex_index = 1
         for triangle in surfaces:
@@ -460,8 +473,8 @@ def process_polygons_parallel(polys, trans_param):
             results.append(t)
             #data.append(poly_components)
         if len(epoints_clean) == 4:
-            results.append([epoints])
-
+            epoints_clean_translated, _ = addTranslationParameters(epoints_clean, [], trans_param=trans_param)
+            results.append([epoints_clean_translated])
 
         #t = process_polygon(poly)
         #results.append(t)
@@ -489,9 +502,9 @@ def processOpening(o, path, buildingid, overall_counter, tr_1, trans_param, b_co
             for poly in t:
                 for tr in poly:
                     triangles.append(tr)
-            filename = path + str(b_counter) + "_" +  str(overall_counter) + ".obj"
+            filename = path + str(b_counter) + "_" + str(overall_counter) + ".obj"
             write_obj_file(triangles, filename, str(child.tag), buildingid, unique_identifier, overall_counter, path,
-                           tr_1)
+                           tr_1, trans_param)
 
 def getAllExteriorPoints(polys):
     data = []
@@ -507,15 +520,16 @@ def getAllExteriorPoints(polys):
     return data
 
 
-def processWithApproximatedWindows(o, path, buildingid, overall_counter, tr_1):
+def processWithApproximatedWindows(o, path, buildingid, overall_counter, tr_1, translation_parameters, b_counter):
     for child in o.getiterator():
         unique_identifier = child.xpath("@g:id", namespaces={'g': ns_gml})
         if child.tag == '{%s}Window' % ns_bldg or child.tag == '{%s}Door' % ns_bldg:
             polys = m3dm.polygonFinder(o)
             exterior_points = getAllExteriorPoints(polys)
-            t = compute_convex_hull(exterior_points)
-            filename = path + str(overall_counter) + ".obj"
-            write_obj_file(t, filename, str(child.tag), buildingid, unique_identifier, overall_counter, path, tr_1)
+            t_global = compute_convex_hull(exterior_points)
+            _, t = addTranslationParameters(e=[], i=t_global, trans_param=translation_parameters)
+            filename = path + str(b_counter) + "_" + str(overall_counter) + ".obj"
+            write_obj_file(t, filename, str(child.tag), buildingid, unique_identifier, overall_counter, path, tr_1, translation_parameters=translation_parameters)
 
 
 def separateComponents(b, path, APPROXIMATEWINDOWS, ADDBOUNDINGBOX, ADDBOUNDINGBOXJSON , TRANSLATEBUILDINGS, b_counter):
@@ -564,7 +578,7 @@ def separateComponents(b, path, APPROXIMATEWINDOWS, ADDBOUNDINGBOX, ADDBOUNDINGB
         for o in openings:
             #print("approximate windows: ", APPROXIMATEWINDOWS)
             if APPROXIMATEWINDOWS:
-                processWithApproximatedWindows(o, path, buildingid, overall_counter, tr_1, translation_parameters=translation_parameters, b_counter=b_counter)
+                processWithApproximatedWindows(o, path, buildingid, overall_counter, tr_1=tr_1, translation_parameters=translation_parameters, b_counter=b_counter)
             if not APPROXIMATEWINDOWS:
                 processOpening(o, path, buildingid, overall_counter, tr_1,  trans_param=translation_parameters, b_counter= b_counter)
             if ADDBOUNDINGBOXJSON:
@@ -638,7 +652,7 @@ def separateComponents(b, path, APPROXIMATEWINDOWS, ADDBOUNDINGBOX, ADDBOUNDINGB
                                 #print("Nur drei Punkte")
                                 poly_t.append(t)
                             if len(epoints_clean) == 4:
-                                t = e_trans
+                                t = e_trans[0:3]
                                 poly_t.append([t])
                             if len(epoints_clean) < 3:
                                 t = []
@@ -657,7 +671,7 @@ def separateComponents(b, path, APPROXIMATEWINDOWS, ADDBOUNDINGBOX, ADDBOUNDINGB
                 if ADDBOUNDINGBOXJSON:
                     writeBBOXJSON(b, overall_counter=overall_counter, path=path, b_counter=b_counter, trans_param=translation_parameters)
                 write_obj_file(t_ges, filename, str(feature.tag), buildingid, cleaned_filename, overall_counter, path,
-                               tr_1)
+                               tr_1, translation_parameters=translation_parameters)
                 overall_counter += 1
 
     print("Segmentation finished!")
