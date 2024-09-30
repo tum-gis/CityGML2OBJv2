@@ -16,7 +16,7 @@ def addTranslationParameters(e, i, trans_param):
     i_translated = []
     trans_param = np.array(trans_param)
     # case distinction for empty translation parameters
-    if trans_param !=  []:
+    if len(trans_param) > 0:
         # Subtract the translation parameters from each point
         if len(e) > 0:
             e_translated = e - trans_param
@@ -110,11 +110,18 @@ def obtainSRSInfo(root):
 
 # This function is used to create a corresponding json file defining the bbox of an object for each corresponding obj file
 def writeBBOXJSON(b, overall_counter, path, b_counter, trans_param):
-    translation_parameters = {
-        "d_x": str(trans_param[0]),
-        "d_y": str(trans_param[1]),
-        "d_z": str(trans_param[2])
-    }
+    if len(trans_param) > 0:
+        translation_parameters = {
+            "d_x": str(trans_param[0]),
+            "d_y": str(trans_param[1]),
+            "d_z": str(trans_param[2])
+        }
+    else:
+        translation_parameters = {
+            "d_x": str(0),
+            "d_y": str(0),
+            "d_z": str(0)
+        }
 
     buffered_box_points_global = getBufferedBBoxPoints(b)
 
