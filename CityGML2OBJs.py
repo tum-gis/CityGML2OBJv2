@@ -236,6 +236,11 @@ PARSER.add_argument('-addBB', '--addBoundingBox',
                     help='Add small triangles defining the bounding box to each of the components.',
                     required=False)
 
+# Todo: Neue funktion muss noch fertig implementiert werden
+PARSER.add_argument('-importBB', '--importBoundingBox',
+                    help='Add small triangles defining an imported bounding box to each of the components.',
+                    required=False)
+
 PARSER.add_argument('-addBBJSON', '--addBoundingBoxJSON',
                     help='The bounding box of the building is additionally saved in a designated json-file',
                     required=False)
@@ -345,6 +350,15 @@ elif ADDBOUNDINGBOX == '0':
     ADDBOUNDINGBOX = False
 else:
     ADDBOUNDINGBOX = False
+
+ # Todo: mussnoch implementiert werden
+IMPORTBOUNDINGBOX = ARGS['addBoundingBox']
+if IMPORTBOUNDINGBOX == '1':
+    IMPORTBOUNDINGBOX = True
+elif IMPORTBOUNDINGBOX == '0':
+    IMPORTBOUNDINGBOX = False
+else:
+    IMPORTBOUNDINGBOX = False
 
 ADDBOUNDINGBOXJSON = ARGS['addBoundingBoxJSON']
 if ADDBOUNDINGBOXJSON == '1':
@@ -604,7 +618,7 @@ for f in files_found:
                 csm.addCRSToJSON(root, json_filepath)
                 csm.separateComponents(b, RESULT, APPROXIMATEWINDOWS=APPROXIMATEWINDOWS,
                                        ADDBOUNDINGBOX=ADDBOUNDINGBOX, ADDBOUNDINGBOXJSON=ADDBOUNDINGBOXJSON,
-                                       TRANSLATEBUILDINGS=TRANSLATEBUILDINGS, b_counter=b_counter)
+                                       TRANSLATEBUILDINGS=TRANSLATEBUILDINGS, IMPORTBOUNDINGBOX=IMPORTBOUNDINGBOX, b_counter=b_counter)
                 # End time
                 end_time = time.time()
                 # Calculate elapsed time

@@ -539,7 +539,15 @@ def processWithApproximatedWindows(o, path, buildingid, overall_counter, tr_1, t
             write_obj_file(t, filename, str(child.tag), buildingid, unique_identifier, overall_counter, path, tr_1, translation_parameters=translation_parameters)
 
 
-def separateComponents(b, path, APPROXIMATEWINDOWS, ADDBOUNDINGBOX, ADDBOUNDINGBOXJSON , TRANSLATEBUILDINGS, b_counter):
+# Todo: diese Funktion muss noch implementiert werden
+# This function is used to im port a bounding box that is associated to the corresponding building component
+def importBoundingBox(trans_param):
+    return 0
+
+def separateComponents(b, path, APPROXIMATEWINDOWS, ADDBOUNDINGBOX, ADDBOUNDINGBOXJSON , TRANSLATEBUILDINGS, IMPORTBOUNDINGBOX, b_counter):
+    #if IMPORTBOUNDINGBOX:
+    #    ADDBOUNDINGBOX = 0 # make sure that the bounding box is not calculated
+
     if TRANSLATEBUILDINGS:
         # Step 1: Obtain the axis oriented bounding box of the building
         bounding_box_points = getBufferedBBoxPoints(b)
