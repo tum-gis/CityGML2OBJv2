@@ -7,12 +7,36 @@ import numpy as np
 import open3d as o3d
 import open3d.core as o3c
 import os
-from concurrent.futures import ThreadPoolExecutor
+
+
+# Function to create triangles at each corner in 3D
+def create_corner_triangles(box_points, triangle_size=1):
+    triangles = []
+    for i, point in enumerate(box_points):
+        x, y, z = point
+        if i == 0:  # Bottom-left-front corner
+            triangles.append([[x, y, z], [x + triangle_size, y, z], [x, y + triangle_size, z]])
+        elif i == 1:  # Bottom-right-front corner
+            triangles.append([[x, y, z], [x - triangle_size, y, z], [x, y + triangle_size, z]])
+        elif i == 2:  # Top-left-front corner
+            triangles.append([[x, y, z], [x + triangle_size, y, z], [x, y - triangle_size, z]])
+        elif i == 3:  # Bottom-left-back corner
+            triangles.append([[x, y, z], [x + triangle_size, y, z], [x, y + triangle_size, z]])
+        elif i == 4:  # Top-right-back corner
+            triangles.append([[x, y, z], [x - triangle_size, y, z], [x, y - triangle_size, z]])
+        elif i == 5:  # Top-left-back corner
+            triangles.append([[x, y, z], [x + triangle_size, y, z], [x, y - triangle_size, z]])
+        elif i == 6:  # Bottom-right-back corner
+            triangles.append([[x, y, z], [x - triangle_size, y, z], [x, y + triangle_size, z]])
+        elif i == 7:  # Top-right-front corner
+            triangles.append([[x, y, z], [x - triangle_size, y, z], [x, y - triangle_size, z]])
+    return triangles
+
 
 def addTranslationParameters(e, i, trans_param):
     # Convert lists to numpy arrays for easier manipulation
     e = np.array(e)
-    #i = np.array(i)
+    # i = np.array(i)
     i_translated = []
     trans_param = np.array(trans_param)
     # case distinction for empty translation parameters
@@ -25,7 +49,7 @@ def addTranslationParameters(e, i, trans_param):
         # Iterate over all the different interior rings
         if len(i) > 0:
             for interior_ring in i:
-                interior_ring =np.asarray(interior_ring)
+                interior_ring = np.asarray(interior_ring)
                 # Translate the interior ring
                 interior_ring_translated = interior_ring - trans_param
                 # Coollect the translated interior rings
@@ -108,6 +132,7 @@ def obtainSRSInfo(root):
     srs_Dimensions = [envelope.get('srsDimension') for envelope in envelopes]
     return srs_names, srs_Dimensions
 
+
 # This function is used to create a corresponding json file defining the bbox of an object for each corresponding obj file
 def writeBBOXJSON(b, overall_counter, path, b_counter, trans_param):
     if len(trans_param) > 0:
@@ -145,19 +170,17 @@ def writeBBOXJSON(b, overall_counter, path, b_counter, trans_param):
     else:
         axis_aligned_bbox = {}
 
-
     # Neuen Identifier hinzufügen
     axis_aligned_bbox["axis_aligned_bbox"] = {
         "min_point": str(min_point),
         "max_point": str(max_point),
-        "translation_parameters" : translation_parameters
+        "translation_parameters": translation_parameters
 
     }
 
     # Zuordnungen in JSON-Datei schreiben
     with open(json_file_path, 'w') as json_file:
         json.dump(axis_aligned_bbox, json_file, indent=4)
-
 
     return 0
 
@@ -169,10 +192,14 @@ def addCRSToJSON(root, json_file_path):
     envelopes = []
     for envelope in root.getiterator('{%s}Envelope' % ns_gml):
         envelopes.append(envelope)
+    if envelopes:
+        # Extracting the srsName attribute from each Envelope
+        srs_names = [envelope.get('srsName') for envelope in envelopes]
+        srs_Dimensions = [envelope.get('srsDimension') for envelope in envelopes]
+    elif not envelopes:
+        srs_names = "Unkown"
+        srs_Dimensions = "Unkown"
 
-    # Extracting the srsName attribute from each Envelope
-    srs_names = [envelope.get('srsName') for envelope in envelopes]
-    srs_Dimensions = [envelope.get('srsDimension') for envelope in envelopes]
 
     used_srs = srs_names[0]
     # Prüfen, ob die JSON-Datei existiert und laden
@@ -184,8 +211,8 @@ def addCRSToJSON(root, json_file_path):
 
     # Neuen Identifier hinzufügen
     crs_info["CRS"] = {
-        "srsName" : used_srs,
-        "srsDimensions" : srs_Dimensions
+        "srsName": used_srs,
+        "srsDimensions": srs_Dimensions
     }
 
     # Zuordnungen in JSON-Datei schreiben
@@ -195,35 +222,11 @@ def addCRSToJSON(root, json_file_path):
     return 0
 
 
-def claculateBuildingBoundingVbolume(b, trans_param):
-
+def claculateCornerTriangles(b, trans_param):
     buffered_box_points = getBufferedBBoxPoints(b)
 
     # Translate the Bounding box into the local coordinate system
-    #buffered_box_points, _ = addTranslationParameters(buffered_box_points_global, [], trans_param=trans_param)
-
-    # Function to create triangles at each corner in 3D
-    def create_corner_triangles(box_points, triangle_size=1):
-        triangles = []
-        for i, point in enumerate(box_points):
-            x, y, z = point
-            if i == 0:  # Bottom-left-front corner
-                triangles.append([[x, y, z], [x + triangle_size, y, z], [x, y + triangle_size, z]])
-            elif i == 1:  # Bottom-right-front corner
-                triangles.append([[x, y, z], [x - triangle_size, y, z], [x, y + triangle_size, z]])
-            elif i == 2:  # Top-left-front corner
-                triangles.append([[x, y, z], [x + triangle_size, y, z], [x, y - triangle_size, z]])
-            elif i == 3:  # Bottom-left-back corner
-                triangles.append([[x, y, z], [x + triangle_size, y, z], [x, y + triangle_size, z]])
-            elif i == 4:  # Top-right-back corner
-                triangles.append([[x, y, z], [x - triangle_size, y, z], [x, y - triangle_size, z]])
-            elif i == 5:  # Top-left-back corner
-                triangles.append([[x, y, z], [x + triangle_size, y, z], [x, y - triangle_size, z]])
-            elif i == 6:  # Bottom-right-back corner
-                triangles.append([[x, y, z], [x - triangle_size, y, z], [x, y + triangle_size, z]])
-            elif i == 7:  # Top-right-front corner
-                triangles.append([[x, y, z], [x - triangle_size, y, z], [x, y - triangle_size, z]])
-        return triangles
+    # buffered_box_points, _ = addTranslationParameters(buffered_box_points_global, [], trans_param=trans_param)
 
     # Create triangles at the corners of the buffered bounding box
     corner_triangles = create_corner_triangles(buffered_box_points)
@@ -250,7 +253,6 @@ def add_identifier_to_json(filename, tag, parentID, gmlID, json_file_path):
     - gmlID (str): The gml ID corresponding to the .obj file.
     - json_file_path (str): Path to the JSON file where identifier information will be stored.
     """
-
 
     # Prüfen, ob die JSON-Datei existiert und laden
     if os.path.exists(json_file_path):
@@ -447,6 +449,7 @@ def compute_convex_hull(points):
         faces.append(face)
     return faces
 
+
 def process_polygon(p, trans_param):
     e = p[0]
     i = p[1]
@@ -478,17 +481,17 @@ def process_polygons_parallel(polys, trans_param):
         if len(epoints_clean) > 4:
             t = process_polygon([epoints_clean, irings], trans_param=trans_param)
             results.append(t)
-            #data.append(poly_components)
+            # data.append(poly_components)
         if len(epoints_clean) == 4:
             epoints_clean_translated, _ = addTranslationParameters(epoints_clean, [], trans_param=trans_param)
             results.append([epoints_clean_translated])
 
-        #t = process_polygon(poly)
-        #results.append(t)
+        # t = process_polygon(poly)
+        # results.append(t)
 
-    #cpu_cores = os.cpu_count()
-    #print(f'Number of available CPU cores (using os): {cpu_cores}')
-    #with ThreadPoolExecutor(max_workers=cpu_cores) as executor:
+    # cpu_cores = os.cpu_count()
+    # print(f'Number of available CPU cores (using os): {cpu_cores}')
+    # with ThreadPoolExecutor(max_workers=cpu_cores) as executor:
     #    # Submitting all tasks
     #    futures = [executor.submit(process_polygon, p) for p in data]
     #    # Collecting results
@@ -513,6 +516,7 @@ def processOpening(o, path, buildingid, overall_counter, tr_1, trans_param, b_co
             write_obj_file(triangles, filename, str(child.tag), buildingid, unique_identifier, overall_counter, path,
                            tr_1, trans_param)
 
+
 def getAllExteriorPoints(polys):
     data = []
     for poly in polys:
@@ -536,18 +540,61 @@ def processWithApproximatedWindows(o, path, buildingid, overall_counter, tr_1, t
             t_global = compute_convex_hull(exterior_points)
             _, t = addTranslationParameters(e=[], i=t_global, trans_param=translation_parameters)
             filename = path + str(b_counter) + "_" + str(overall_counter) + ".obj"
-            write_obj_file(t, filename, str(child.tag), buildingid, unique_identifier, overall_counter, path, tr_1, translation_parameters=translation_parameters)
+            write_obj_file(t, filename, str(child.tag), buildingid, unique_identifier, overall_counter, path, tr_1,
+                           translation_parameters=translation_parameters)
 
 
-# Todo: diese Funktion muss noch implementiert werden
 # This function is used to im port a bounding box that is associated to the corresponding building component
-def importBoundingBox(trans_param):
-    return 0
+# It still has to be tested if it works
+def importBoundingBox(pathToBoundingBoxFile, trans_param):
+    print("Hier")
+    keys = ["_xmin", "_xmax", "_ymin", "_ymax", "_zmin", "_zmax"]
+    values = {}
 
-def separateComponents(b, path, APPROXIMATEWINDOWS, ADDBOUNDINGBOX, ADDBOUNDINGBOXJSON , TRANSLATEBUILDINGS, IMPORTBOUNDINGBOX, b_counter):
-    #if IMPORTBOUNDINGBOX:
-    #    ADDBOUNDINGBOX = 0 # make sure that the bounding box is not calculated
+    with open(pathToBoundingBoxFile, 'r') as file:
+        for _ in range(15):
+            line = file.readline()
+            for key in keys:
+                match = re.search(f'"{key}"\s*:\s*([-0-9.]+)', line)
+                if match:
+                    values[key] = float(match.group(1))
 
+    if not all(k in values for k in keys):
+        raise ValueError("Missing bounding box values in the first 15 lines")
+
+    min_x, max_x = values["_xmin"], values["_xmax"]
+    min_y, max_y = values["_ymin"], values["_ymax"]
+    min_z, max_z = values["_zmin"], values["_zmax"]
+
+    print(f"min x: {min_x} min y: {min_y} , min z: {min_z}")
+    print(f"max x: {max_x} max y: {max_y} , max z: {max_z}")
+
+    box_points = np.array([
+        [min_x, min_y, min_z],
+        [max_x, min_y, min_z],
+        [min_x, max_y, min_z],
+        [min_x, min_y, max_z],
+        [max_x, max_y, max_z],
+        [min_x, max_y, max_z],
+        [max_x, min_y, max_z],
+        [max_x, max_y, min_z]
+    ])
+
+    # Create triangles at the corners of the buffered bounding box
+    corner_triangles = create_corner_triangles(box_points)
+
+    # Convert the triangles to lists
+    corner_triangles = [np.array(triangle).tolist() for triangle in corner_triangles]
+
+    print("\nCorner Triangles:")
+    for i, triangle in enumerate(corner_triangles):
+        print(f"Triangle {i + 1}: {triangle}")
+
+    return corner_triangles
+
+
+def separateComponents(b, path, APPROXIMATEWINDOWS, ADDBOUNDINGBOX, ADDBOUNDINGBOXJSON, TRANSLATEBUILDINGS,
+                       IMPORTBOUNDINGBOX, b_counter):
     if TRANSLATEBUILDINGS:
         # Step 1: Obtain the axis oriented bounding box of the building
         bounding_box_points = getBufferedBBoxPoints(b)
@@ -555,12 +602,15 @@ def separateComponents(b, path, APPROXIMATEWINDOWS, ADDBOUNDINGBOX, ADDBOUNDINGB
         # Step 2 calculate the mean value of the points that the bbox points
         translation_parameters = np.mean(bounding_box_points, axis=0)
 
-    if not TRANSLATEBUILDINGS: #todo: nocheinmal üerlegen ob man hier nicht vielleicht besser elif oder so nehmen sollte
+    if not TRANSLATEBUILDINGS:  # todo: nocheinmal üerlegen ob man hier nicht vielleicht besser elif oder so nehmen sollte
         translation_parameters = []
+
+    if IMPORTBOUNDINGBOX != None:
+        ADDBOUNDINGBOX = False  # make sure that the bounding box is not calculated
 
     # Option to include the small triangles to mark the buffered bounding box
     if ADDBOUNDINGBOX:
-        tr_1 = claculateBuildingBoundingVbolume(b, trans_param=translation_parameters)
+        tr_1 = claculateCornerTriangles(b, trans_param=translation_parameters)
     elif not ADDBOUNDINGBOX:
         tr_1 = []
     global overall_counter
@@ -578,8 +628,16 @@ def separateComponents(b, path, APPROXIMATEWINDOWS, ADDBOUNDINGBOX, ADDBOUNDINGB
 
     # get the building id for the building
     buildingid = b.xpath("@g:id", namespaces={'g': ns_gml})
+
+    # Handle the case when a building has no gml:id - This should however never occur...
     if not buildingid:
         buildingid = b_counter
+
+    # Todo: Muss noch implementiert werden
+    # Import the bounding box
+    if IMPORTBOUNDINGBOX != None:
+        pathToBoundingBoxFile = IMPORTBOUNDINGBOX + "/" + str(buildingid) + ".json"
+        tr_1 = importBoundingBox(pathToBoundingBoxFile=pathToBoundingBoxFile, trans_param=translation_parameters)
 
     if config.getVersion() != 3:
         openings = []
@@ -591,13 +649,16 @@ def separateComponents(b, path, APPROXIMATEWINDOWS, ADDBOUNDINGBOX, ADDBOUNDINGB
                     openingpolygons.append(o)
 
         for o in openings:
-            #print("approximate windows: ", APPROXIMATEWINDOWS)
+            # print("approximate windows: ", APPROXIMATEWINDOWS)
             if APPROXIMATEWINDOWS:
-                processWithApproximatedWindows(o, path, buildingid, overall_counter, tr_1=tr_1, translation_parameters=translation_parameters, b_counter=b_counter)
+                processWithApproximatedWindows(o, path, buildingid, overall_counter, tr_1=tr_1,
+                                               translation_parameters=translation_parameters, b_counter=b_counter)
             if not APPROXIMATEWINDOWS:
-                processOpening(o, path, buildingid, overall_counter, tr_1,  trans_param=translation_parameters, b_counter= b_counter)
+                processOpening(o, path, buildingid, overall_counter, tr_1, trans_param=translation_parameters,
+                               b_counter=b_counter)
             if ADDBOUNDINGBOXJSON:
-                writeBBOXJSON(b, overall_counter=overall_counter, path=path , b_counter=b_counter, trans_param=translation_parameters)
+                writeBBOXJSON(b, overall_counter=overall_counter, path=path, b_counter=b_counter,
+                              trans_param=translation_parameters)
             overall_counter += 1
 
     if config.getVersion() == 3:
@@ -659,19 +720,20 @@ def separateComponents(b, path, APPROXIMATEWINDOWS, ADDBOUNDINGBOX, ADDBOUNDINGB
                             irings.append(ipoints_clean)
 
                         # Applying the translation parameters
-                        e_trans, i_trans = addTranslationParameters(e=epoints_clean, i=irings, trans_param=translation_parameters)
+                        e_trans, i_trans = addTranslationParameters(e=epoints_clean, i=irings,
+                                                                    trans_param=translation_parameters)
 
                         try:
                             if len(epoints_clean) > 4:
                                 t = p3dm.triangulation(e_trans, i_trans)
-                                #print("Nur drei Punkte")
+                                # print("Nur drei Punkte")
                                 poly_t.append(t)
                             if len(epoints_clean) == 4:
                                 t = e_trans[0:3]
                                 poly_t.append([t])
                             if len(epoints_clean) < 3:
                                 t = []
-                                #print("Empty Surface!")
+                                # print("Empty Surface!")
                         except:
                             t = []
 
@@ -684,7 +746,8 @@ def separateComponents(b, path, APPROXIMATEWINDOWS, ADDBOUNDINGBOX, ADDBOUNDINGB
 
                 filename = path + str(b_counter) + "_" + str(overall_counter) + ".obj"
                 if ADDBOUNDINGBOXJSON:
-                    writeBBOXJSON(b, overall_counter=overall_counter, path=path, b_counter=b_counter, trans_param=translation_parameters)
+                    writeBBOXJSON(b, overall_counter=overall_counter, path=path, b_counter=b_counter,
+                                  trans_param=translation_parameters)
                 write_obj_file(t_ges, filename, str(feature.tag), buildingid, cleaned_filename, overall_counter, path,
                                tr_1, translation_parameters=translation_parameters)
                 overall_counter += 1

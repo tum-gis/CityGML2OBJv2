@@ -351,22 +351,21 @@ elif ADDBOUNDINGBOX == '0':
 else:
     ADDBOUNDINGBOX = False
 
- # Todo: mussnoch implementiert werden
-IMPORTBOUNDINGBOX = ARGS['addBoundingBox']
-if IMPORTBOUNDINGBOX == '1':
-    IMPORTBOUNDINGBOX = True
-elif IMPORTBOUNDINGBOX == '0':
-    IMPORTBOUNDINGBOX = False
-else:
-    IMPORTBOUNDINGBOX = False
+
+IMPORTBOUNDINGBOX = ARGS['importBoundingBox']
+if ADDBOUNDINGBOX == True:
+    IMPORTBOUNDINGBOX = None
 
 ADDBOUNDINGBOXJSON = ARGS['addBoundingBoxJSON']
 if ADDBOUNDINGBOXJSON == '1':
     ADDBOUNDINGBOXJSON = True
-elif ADDBOUNDINGBOXJSON == '0':
+elif ADDBOUNDINGBOXJSON == '0' and IMPORTBOUNDINGBOX is not None:
     ADDBOUNDINGBOXJSON = False
 else:
     ADDBOUNDINGBOXJSON = False
+
+if IMPORTBOUNDINGBOX is not None:
+    ADDBOUNDINGBOXJSON = True
 
 TRANSLATEBUILDINGS = ARGS['translateBuildingWise']  # todo: muss noch implementiert werden
 if TRANSLATEBUILDINGS == '1':
@@ -615,6 +614,8 @@ for f in files_found:
             # addd by th_fr
             if SEPARATERCOMPONENTS:
                 json_filepath = RESULT + "index.json"
+                # todo: mus snoch implementiert werde
+
                 csm.addCRSToJSON(root, json_filepath)
                 csm.separateComponents(b, RESULT, APPROXIMATEWINDOWS=APPROXIMATEWINDOWS,
                                        ADDBOUNDINGBOX=ADDBOUNDINGBOX, ADDBOUNDINGBOXJSON=ADDBOUNDINGBOXJSON,
