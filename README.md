@@ -1,6 +1,8 @@
 # :cityscape: CityGML2OBJ 2.0 :cityscape:
 Command line converter of **CityGML (.gml)** to **OBJ (.obj)** files, while maintaining the semantics 
 
+**Please also check out the new [Rust implementation](https://github.com/tum-gis/RustCityGML2OBJ) for converting CityGML to OBJ!**
+
 ![](https://github.com/tum-gis/CityGML2OBJv2/blob/main/citygmltoobj2small.gif)
 
 ## :arrow_forward: How to run?
