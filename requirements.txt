@@ -88,7 +88,6 @@ triangle==20230923
 typing_extensions==4.12.2
 tzdata==2024.1
 unicodedata2 @ file:///croot/unicodedata2_1713212950228/work
-urllib3==2.2.2
 wcwidth==0.2.13
 Werkzeug==3.0.3
 widgetsnbextension==4.0.11
